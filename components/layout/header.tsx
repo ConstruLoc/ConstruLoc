@@ -1,18 +1,10 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { Bell, LogOut, User, Settings } from "lucide-react"
+import { Bell, LogOut, User, Settings, X } from "lucide-react"
 import { useRouter } from "next/navigation"
-import { useEffect, useState } from "react"
+import { useEffect, useState, useRef } from "react"
 
 interface HeaderProps {
   title?: string
@@ -20,7 +12,11 @@ interface HeaderProps {
 
 export function Header({ title = "Dashboard" }: HeaderProps) {
   const [user, setUser] = useState<any>(null)
+  const [showProfileMenu, setShowProfileMenu] = useState(false)
+  const [showNotifications, setShowNotifications] = useState(false)
   const router = useRouter()
+  const profileMenuRef = useRef<HTMLDivElement>(null)
+  const notificationsRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -35,6 +31,20 @@ export function Header({ title = "Dashboard" }: HeaderProps) {
     }
   }, [])
 
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (profileMenuRef.current && !profileMenuRef.current.contains(event.target as Node)) {
+        setShowProfileMenu(false)
+      }
+      if (notificationsRef.current && !notificationsRef.current.contains(event.target as Node)) {
+        setShowNotifications(false)
+      }
+    }
+
+    document.addEventListener("mousedown", handleClickOutside)
+    return () => document.removeEventListener("mousedown", handleClickOutside)
+  }, [])
+
   const handleSignOut = () => {
     console.log("[v0] Sign out clicked")
     if (typeof window !== "undefined") {
@@ -47,18 +57,26 @@ export function Header({ title = "Dashboard" }: HeaderProps) {
 
   const handleNavigateToProfile = () => {
     console.log("[v0] Navigate to profile clicked")
+    setShowProfileMenu(false)
     router.push("/perfil")
   }
 
   const handleNavigateToSettings = () => {
     console.log("[v0] Navigate to settings clicked")
+    setShowProfileMenu(false)
     router.push("/configuracoes")
   }
 
-  const handleNotifications = () => {
+  const toggleNotifications = () => {
     console.log("[v0] Notifications button clicked")
-    // TODO: Open notifications panel or navigate to notifications page
-    alert("Funcionalidade de notificações em desenvolvimento")
+    setShowNotifications(!showNotifications)
+    setShowProfileMenu(false)
+  }
+
+  const toggleProfileMenu = () => {
+    console.log("[v0] Profile menu button clicked")
+    setShowProfileMenu(!showProfileMenu)
+    setShowNotifications(false)
   }
 
   const getUserInitials = () => {
@@ -83,63 +101,92 @@ export function Header({ title = "Dashboard" }: HeaderProps) {
         </div>
 
         <div className="flex items-center gap-4">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="relative text-gray-300 hover:text-white hover:bg-gray-700"
-            onClick={handleNotifications}
-          >
-            <Bell className="h-5 w-5" />
-            <span className="absolute -top-1 -right-1 h-4 w-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
-              3
-            </span>
-          </Button>
+          <div className="relative" ref={notificationsRef}>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="relative text-gray-300 hover:text-white hover:bg-gray-700"
+              onClick={toggleNotifications}
+            >
+              <Bell className="h-5 w-5" />
+              <span className="absolute -top-1 -right-1 h-4 w-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
+                3
+              </span>
+            </Button>
 
-          <Button
-            variant="ghost"
-            size="sm"
-            className="text-gray-300 hover:text-white hover:bg-gray-700"
-            onClick={handleNavigateToSettings}
-          >
-            <Settings className="h-5 w-5" />
-          </Button>
-
-          <DropdownMenu modal={false}>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="ghost"
-                className="relative h-10 w-10 rounded-full"
-                onClick={() => console.log("[v0] Avatar button clicked")}
-              >
-                <Avatar className="h-10 w-10">
-                  <AvatarFallback className="bg-orange-500 text-white font-medium">{getUserInitials()}</AvatarFallback>
-                </Avatar>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-56 z-[9999]" align="end" forceMount sideOffset={5}>
-              <DropdownMenuLabel className="font-normal">
-                <div className="flex flex-col space-y-1">
-                  <p className="text-sm font-medium leading-none">{user?.name || "Administrador"}</p>
-                  <p className="text-xs leading-none text-muted-foreground">{user?.email || "admin@construloc.com"}</p>
-                  <p className="text-xs leading-none text-muted-foreground">Administrador</p>
+            {showNotifications && (
+              <div className="absolute right-0 mt-2 w-80 bg-gray-800 border border-gray-700 rounded-lg shadow-xl z-[10000]">
+                <div className="p-4 border-b border-gray-700 flex items-center justify-between">
+                  <h3 className="font-semibold text-white">Notificações</h3>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowNotifications(false)}
+                    className="h-6 w-6 p-0 text-gray-400 hover:text-white"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
                 </div>
-              </DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={handleNavigateToProfile}>
-                <User className="mr-2 h-4 w-4" />
-                <span>Perfil</span>
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={handleNavigateToSettings}>
-                <Settings className="mr-2 h-4 w-4" />
-                <span>Configurações</span>
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={handleSignOut} className="text-red-600">
-                <LogOut className="mr-2 h-4 w-4" />
-                <span>Sair</span>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+                <div className="p-4 space-y-3 max-h-96 overflow-y-auto">
+                  <div className="p-3 bg-gray-700/50 rounded-lg hover:bg-gray-700 cursor-pointer">
+                    <p className="text-sm text-white font-medium">Contrato próximo do vencimento</p>
+                    <p className="text-xs text-gray-400 mt-1">Contrato #123 vence em 3 dias</p>
+                  </div>
+                  <div className="p-3 bg-gray-700/50 rounded-lg hover:bg-gray-700 cursor-pointer">
+                    <p className="text-sm text-white font-medium">Novo equipamento disponível</p>
+                    <p className="text-xs text-gray-400 mt-1">Betoneira 400L está disponível para locação</p>
+                  </div>
+                  <div className="p-3 bg-gray-700/50 rounded-lg hover:bg-gray-700 cursor-pointer">
+                    <p className="text-sm text-white font-medium">Pagamento recebido</p>
+                    <p className="text-xs text-gray-400 mt-1">Pagamento de R$ 450,00 confirmado</p>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className="relative" ref={profileMenuRef}>
+            <Button variant="ghost" className="relative h-10 w-10 rounded-full" onClick={toggleProfileMenu}>
+              <Avatar className="h-10 w-10">
+                <AvatarFallback className="bg-orange-500 text-white font-medium">{getUserInitials()}</AvatarFallback>
+              </Avatar>
+            </Button>
+
+            {showProfileMenu && (
+              <div className="absolute right-0 mt-2 w-56 bg-gray-800 border border-gray-700 rounded-lg shadow-xl z-[10000]">
+                <div className="p-3 border-b border-gray-700">
+                  <p className="text-sm font-medium text-white">{user?.name || "Administrador"}</p>
+                  <p className="text-xs text-gray-400 mt-1">{user?.email || "admin@construloc.com"}</p>
+                  <p className="text-xs text-gray-400">Administrador</p>
+                </div>
+                <div className="py-2">
+                  <button
+                    onClick={handleNavigateToProfile}
+                    className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-white"
+                  >
+                    <User className="h-4 w-4" />
+                    <span>Perfil</span>
+                  </button>
+                  <button
+                    onClick={handleNavigateToSettings}
+                    className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-white"
+                  >
+                    <Settings className="h-4 w-4" />
+                    <span>Configurações</span>
+                  </button>
+                </div>
+                <div className="border-t border-gray-700 py-2">
+                  <button
+                    onClick={handleSignOut}
+                    className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-400 hover:bg-gray-700 hover:text-red-300"
+                  >
+                    <LogOut className="h-4 w-4" />
+                    <span>Sair</span>
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </header>
