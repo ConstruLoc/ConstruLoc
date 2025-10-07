@@ -71,12 +71,13 @@ export function Header({ title = "Dashboard" }: HeaderProps) {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <Image
-            src="/images/logo-construloc-sem-fundo.png"
+            src="/images/logo-construloc.png"
             alt="ConstruLoc"
             width={120}
             height={48}
             className="object-contain"
           />
+          {/* </CHANGE> */}
           <div>
             <h1 className="text-xl font-bold text-orange-500">Sistema de Gerenciamento</h1>
             <p className="text-sm text-gray-400">Locações de equipamentos</p>

@@ -113,13 +113,7 @@ export function Sidebar({ className }: SidebarProps) {
     >
       {/* Logo */}
       <div className="flex items-center justify-between p-4 border-b border-gray-700 flex-shrink-0">
-        <Image
-          src="/images/logo-construloc-sem-fundo.png"
-          alt="ConstruLoc"
-          width={140}
-          height={56}
-          className="object-contain"
-        />
+        <Image src="/images/logo-construloc.png" alt="ConstruLoc" width={140} height={56} className="object-contain" />
         <Button
           variant="ghost"
           size="sm"
