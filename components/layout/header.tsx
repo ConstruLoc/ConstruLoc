@@ -36,6 +36,7 @@ export function Header({ title = "Dashboard" }: HeaderProps) {
   }, [])
 
   const handleSignOut = () => {
+    console.log("[v0] Sign out clicked")
     if (typeof window !== "undefined") {
       localStorage.removeItem("construloc_current_user")
       localStorage.removeItem("construloc_remember_me")
@@ -45,10 +46,12 @@ export function Header({ title = "Dashboard" }: HeaderProps) {
   }
 
   const handleNavigateToProfile = () => {
+    console.log("[v0] Navigate to profile clicked")
     router.push("/perfil")
   }
 
   const handleNavigateToSettings = () => {
+    console.log("[v0] Navigate to settings clicked")
     router.push("/configuracoes")
   }
 
@@ -101,16 +104,19 @@ export function Header({ title = "Dashboard" }: HeaderProps) {
             <Settings className="h-5 w-5" />
           </Button>
 
-          {/* User Menu */}
-          <DropdownMenu>
+          <DropdownMenu modal={false}>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="relative h-10 w-10 rounded-full">
+              <Button
+                variant="ghost"
+                className="relative h-10 w-10 rounded-full"
+                onClick={() => console.log("[v0] Avatar button clicked")}
+              >
                 <Avatar className="h-10 w-10">
                   <AvatarFallback className="bg-orange-500 text-white font-medium">{getUserInitials()}</AvatarFallback>
                 </Avatar>
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-56" align="end" forceMount>
+            <DropdownMenuContent className="w-56 z-[9999]" align="end" forceMount sideOffset={5}>
               <DropdownMenuLabel className="font-normal">
                 <div className="flex flex-col space-y-1">
                   <p className="text-sm font-medium leading-none">{user?.name || "Administrador"}</p>
