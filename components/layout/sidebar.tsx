@@ -2,7 +2,6 @@
 
 import { useState } from "react"
 import Link from "next/link"
-import Image from "next/image"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -113,7 +112,10 @@ export function Sidebar({ className }: SidebarProps) {
     >
       {/* Logo */}
       <div className="flex items-center justify-between p-4 border-b border-gray-700 flex-shrink-0">
-        <Image src="/images/logo-construloc.png" alt="ConstruLoc" width={140} height={56} className="object-contain" />
+        <div className="flex flex-col">
+          <h1 className="text-xl font-bold text-orange-500">ConstruLoc</h1>
+          <p className="text-xs text-gray-400">Locações de Equipamentos</p>
+        </div>
         <Button
           variant="ghost"
           size="sm"

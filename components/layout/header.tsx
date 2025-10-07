@@ -13,7 +13,6 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Bell, LogOut, User, Settings } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
-import Image from "next/image"
 
 interface HeaderProps {
   title?: string
@@ -52,7 +51,6 @@ export function Header({ title = "Dashboard" }: HeaderProps) {
   const handleNavigateToSettings = () => {
     router.push("/configuracoes")
   }
-  // </CHANGE>
 
   const getUserInitials = () => {
     if (user?.name) {
@@ -69,19 +67,10 @@ export function Header({ title = "Dashboard" }: HeaderProps) {
   return (
     <header className="bg-gray-800 border-b border-gray-700 px-6 py-4">
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <Image
-            src="/images/logo-construloc.png"
-            alt="ConstruLoc"
-            width={120}
-            height={48}
-            className="object-contain"
-          />
-          {/* </CHANGE> */}
-          <div>
-            <h1 className="text-xl font-bold text-orange-500">Sistema de Gerenciamento</h1>
-            <p className="text-sm text-gray-400">Locações de equipamentos</p>
-          </div>
+        {/* Removed logo with white background, using only text */}
+        <div className="flex flex-col">
+          <h1 className="text-xl font-bold text-orange-500">ConstruLoc</h1>
+          <p className="text-sm text-gray-400">Locações de equipamentos</p>
         </div>
 
         <div className="flex items-center gap-4">
@@ -126,7 +115,6 @@ export function Header({ title = "Dashboard" }: HeaderProps) {
                 <Settings className="mr-2 h-4 w-4" />
                 <span>Configurações</span>
               </DropdownMenuItem>
-              {/* </CHANGE> */}
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={handleSignOut} className="text-red-600">
                 <LogOut className="mr-2 h-4 w-4" />
