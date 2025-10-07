@@ -34,9 +34,11 @@ export function Header({ title = "Dashboard" }: HeaderProps) {
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (profileMenuRef.current && !profileMenuRef.current.contains(event.target as Node)) {
+        console.log("[v0] Closing profile menu - clicked outside")
         setShowProfileMenu(false)
       }
       if (notificationsRef.current && !notificationsRef.current.contains(event.target as Node)) {
+        console.log("[v0] Closing notifications - clicked outside")
         setShowNotifications(false)
       }
     }
@@ -68,13 +70,13 @@ export function Header({ title = "Dashboard" }: HeaderProps) {
   }
 
   const toggleNotifications = () => {
-    console.log("[v0] Notifications button clicked")
+    console.log("[v0] Notifications button clicked, current state:", showNotifications)
     setShowNotifications(!showNotifications)
     setShowProfileMenu(false)
   }
 
   const toggleProfileMenu = () => {
-    console.log("[v0] Profile menu button clicked")
+    console.log("[v0] Profile menu button clicked, current state:", showProfileMenu)
     setShowProfileMenu(!showProfileMenu)
     setShowNotifications(false)
   }
@@ -92,16 +94,15 @@ export function Header({ title = "Dashboard" }: HeaderProps) {
   }
 
   return (
-    <header className="bg-gray-800 border-b border-gray-700 px-6 py-4">
+    <header className="bg-gray-800 border-b border-gray-700 px-6 py-4 relative overflow-visible">
       <div className="flex items-center justify-between">
-        {/* Removed logo with white background, using only text */}
         <div className="flex flex-col">
           <h1 className="text-xl font-bold text-orange-500">ConstruLoc</h1>
           <p className="text-sm text-gray-400">Locações de equipamentos</p>
         </div>
 
-        <div className="flex items-center gap-4">
-          <div className="relative" ref={notificationsRef}>
+        <div className="flex items-center gap-4 relative">
+          <div className="relative z-50" ref={notificationsRef}>
             <Button
               variant="ghost"
               size="sm"
@@ -115,37 +116,40 @@ export function Header({ title = "Dashboard" }: HeaderProps) {
             </Button>
 
             {showNotifications && (
-              <div className="absolute right-0 mt-2 w-80 bg-gray-800 border border-gray-700 rounded-lg shadow-xl z-[10000]">
-                <div className="p-4 border-b border-gray-700 flex items-center justify-between">
-                  <h3 className="font-semibold text-white">Notificações</h3>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setShowNotifications(false)}
-                    className="h-6 w-6 p-0 text-gray-400 hover:text-white"
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
+              <>
+                <div className="fixed inset-0 z-[9998]" onClick={() => setShowNotifications(false)} />
+                <div className="fixed right-6 top-16 w-80 bg-gray-800 border border-gray-700 rounded-lg shadow-2xl z-[9999] animate-in fade-in slide-in-from-top-2 duration-200">
+                  <div className="p-4 border-b border-gray-700 flex items-center justify-between">
+                    <h3 className="font-semibold text-white">Notificações</h3>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setShowNotifications(false)}
+                      className="h-6 w-6 p-0 text-gray-400 hover:text-white"
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  <div className="p-4 space-y-3 max-h-96 overflow-y-auto">
+                    <div className="p-3 bg-gray-700/50 rounded-lg hover:bg-gray-700 cursor-pointer transition-colors">
+                      <p className="text-sm text-white font-medium">Contrato próximo do vencimento</p>
+                      <p className="text-xs text-gray-400 mt-1">Contrato #123 vence em 3 dias</p>
+                    </div>
+                    <div className="p-3 bg-gray-700/50 rounded-lg hover:bg-gray-700 cursor-pointer transition-colors">
+                      <p className="text-sm text-white font-medium">Novo equipamento disponível</p>
+                      <p className="text-xs text-gray-400 mt-1">Betoneira 400L está disponível para locação</p>
+                    </div>
+                    <div className="p-3 bg-gray-700/50 rounded-lg hover:bg-gray-700 cursor-pointer transition-colors">
+                      <p className="text-sm text-white font-medium">Pagamento recebido</p>
+                      <p className="text-xs text-gray-400 mt-1">Pagamento de R$ 450,00 confirmado</p>
+                    </div>
+                  </div>
                 </div>
-                <div className="p-4 space-y-3 max-h-96 overflow-y-auto">
-                  <div className="p-3 bg-gray-700/50 rounded-lg hover:bg-gray-700 cursor-pointer">
-                    <p className="text-sm text-white font-medium">Contrato próximo do vencimento</p>
-                    <p className="text-xs text-gray-400 mt-1">Contrato #123 vence em 3 dias</p>
-                  </div>
-                  <div className="p-3 bg-gray-700/50 rounded-lg hover:bg-gray-700 cursor-pointer">
-                    <p className="text-sm text-white font-medium">Novo equipamento disponível</p>
-                    <p className="text-xs text-gray-400 mt-1">Betoneira 400L está disponível para locação</p>
-                  </div>
-                  <div className="p-3 bg-gray-700/50 rounded-lg hover:bg-gray-700 cursor-pointer">
-                    <p className="text-sm text-white font-medium">Pagamento recebido</p>
-                    <p className="text-xs text-gray-400 mt-1">Pagamento de R$ 450,00 confirmado</p>
-                  </div>
-                </div>
-              </div>
+              </>
             )}
           </div>
 
-          <div className="relative" ref={profileMenuRef}>
+          <div className="relative z-50" ref={profileMenuRef}>
             <Button variant="ghost" className="relative h-10 w-10 rounded-full" onClick={toggleProfileMenu}>
               <Avatar className="h-10 w-10">
                 <AvatarFallback className="bg-orange-500 text-white font-medium">{getUserInitials()}</AvatarFallback>
@@ -153,38 +157,41 @@ export function Header({ title = "Dashboard" }: HeaderProps) {
             </Button>
 
             {showProfileMenu && (
-              <div className="absolute right-0 mt-2 w-56 bg-gray-800 border border-gray-700 rounded-lg shadow-xl z-[10000]">
-                <div className="p-3 border-b border-gray-700">
-                  <p className="text-sm font-medium text-white">{user?.name || "Administrador"}</p>
-                  <p className="text-xs text-gray-400 mt-1">{user?.email || "admin@construloc.com"}</p>
-                  <p className="text-xs text-gray-400">Administrador</p>
+              <>
+                <div className="fixed inset-0 z-[9998]" onClick={() => setShowProfileMenu(false)} />
+                <div className="fixed right-6 top-16 w-56 bg-gray-800 border border-gray-700 rounded-lg shadow-2xl z-[9999] animate-in fade-in slide-in-from-top-2 duration-200">
+                  <div className="p-3 border-b border-gray-700">
+                    <p className="text-sm font-medium text-white">{user?.name || "Administrador"}</p>
+                    <p className="text-xs text-gray-400 mt-1">{user?.email || "admin@construloc.com"}</p>
+                    <p className="text-xs text-gray-400">Administrador</p>
+                  </div>
+                  <div className="py-2">
+                    <button
+                      onClick={handleNavigateToProfile}
+                      className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-white transition-colors"
+                    >
+                      <User className="h-4 w-4" />
+                      <span>Perfil</span>
+                    </button>
+                    <button
+                      onClick={handleNavigateToSettings}
+                      className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-white transition-colors"
+                    >
+                      <Settings className="h-4 w-4" />
+                      <span>Configurações</span>
+                    </button>
+                  </div>
+                  <div className="border-t border-gray-700 py-2">
+                    <button
+                      onClick={handleSignOut}
+                      className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-400 hover:bg-gray-700 hover:text-red-300 transition-colors"
+                    >
+                      <LogOut className="h-4 w-4" />
+                      <span>Sair</span>
+                    </button>
+                  </div>
                 </div>
-                <div className="py-2">
-                  <button
-                    onClick={handleNavigateToProfile}
-                    className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-white"
-                  >
-                    <User className="h-4 w-4" />
-                    <span>Perfil</span>
-                  </button>
-                  <button
-                    onClick={handleNavigateToSettings}
-                    className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-white"
-                  >
-                    <Settings className="h-4 w-4" />
-                    <span>Configurações</span>
-                  </button>
-                </div>
-                <div className="border-t border-gray-700 py-2">
-                  <button
-                    onClick={handleSignOut}
-                    className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-400 hover:bg-gray-700 hover:text-red-300"
-                  >
-                    <LogOut className="h-4 w-4" />
-                    <span>Sair</span>
-                  </button>
-                </div>
-              </div>
+              </>
             )}
           </div>
         </div>
