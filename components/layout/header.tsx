@@ -52,6 +52,12 @@ export function Header({ title = "Dashboard" }: HeaderProps) {
     router.push("/configuracoes")
   }
 
+  const handleNotifications = () => {
+    console.log("[v0] Notifications button clicked")
+    // TODO: Open notifications panel or navigate to notifications page
+    alert("Funcionalidade de notificações em desenvolvimento")
+  }
+
   const getUserInitials = () => {
     if (user?.name) {
       return user.name
@@ -74,16 +80,24 @@ export function Header({ title = "Dashboard" }: HeaderProps) {
         </div>
 
         <div className="flex items-center gap-4">
-          {/* Notifications */}
-          <Button variant="ghost" size="sm" className="relative text-gray-300 hover:text-white hover:bg-gray-700">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="relative text-gray-300 hover:text-white hover:bg-gray-700"
+            onClick={handleNotifications}
+          >
             <Bell className="h-5 w-5" />
             <span className="absolute -top-1 -right-1 h-4 w-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
               3
             </span>
           </Button>
 
-          {/* Settings */}
-          <Button variant="ghost" size="sm" className="text-gray-300 hover:text-white hover:bg-gray-700">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-gray-300 hover:text-white hover:bg-gray-700"
+            onClick={handleNavigateToSettings}
+          >
             <Settings className="h-5 w-5" />
           </Button>
 
@@ -92,9 +106,7 @@ export function Header({ title = "Dashboard" }: HeaderProps) {
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="relative h-10 w-10 rounded-full">
                 <Avatar className="h-10 w-10">
-                  <AvatarFallback className="bg-orange-100 text-orange-700 font-medium">
-                    {getUserInitials()}
-                  </AvatarFallback>
+                  <AvatarFallback className="bg-orange-500 text-white font-medium">{getUserInitials()}</AvatarFallback>
                 </Avatar>
               </Button>
             </DropdownMenuTrigger>
