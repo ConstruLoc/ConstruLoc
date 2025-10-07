@@ -3,15 +3,12 @@ import { DashboardStats } from "@/components/dashboard-stats"
 import { RecentRentals } from "@/components/recent-rentals"
 import { DashboardAlerts } from "@/components/dashboard-alerts"
 import { DashboardClient } from "@/components/dashboard-client"
-import { NotificationSetup } from "@/components/notifications/notification-setup"
 import { BarChart3, TrendingUp, AlertTriangle } from "lucide-react"
 
 export default async function DashboardPage() {
   return (
     <MainLayout title="Dashboard">
       <div className="space-y-8">
-        <NotificationSetup />
-
         {/* Header Section */}
         <div className="bg-gray-800 border border-gray-700 shadow-sm rounded-xl p-8">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">

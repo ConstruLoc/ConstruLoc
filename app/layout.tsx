@@ -19,6 +19,16 @@ export const metadata: Metadata = {
   generator: "v0.app",
   manifest: "/manifest.json",
   themeColor: "#ea580c",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "ConstruLoc",
+  },
+  viewport: {
+    width: "device-width",
+    initialScale: 1,
+    maximumScale: 1,
+  },
 }
 
 export default function RootLayout({
@@ -28,6 +38,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="pt-BR" suppressHydrationWarning>
+      <head>
+        <link rel="apple-touch-icon" href="/images/logo-construloc.png" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+      </head>
       <body className={`font-sans ${inter.variable}`}>
         <NextThemeProvider attribute="class" defaultTheme="dark" enableSystem={false} disableTransitionOnChange={false}>
           <ThemeProvider>
@@ -37,6 +52,23 @@ export default function RootLayout({
             </UserProvider>
           </ThemeProvider>
         </NextThemeProvider>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              if ('serviceWorker' in navigator) {
+                window.addEventListener('load', function() {
+                  navigator.serviceWorker.register('/sw.js')
+                    .then(function(registration) {
+                      console.log('[PWA] Service Worker registrado com sucesso:', registration.scope);
+                    })
+                    .catch(function(error) {
+                      console.log('[PWA] Falha ao registrar Service Worker:', error);
+                    });
+                });
+              }
+            `,
+          }}
+        />
       </body>
     </html>
   )

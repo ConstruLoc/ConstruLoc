@@ -1,6 +1,7 @@
 "use client"
 
 import type React from "react"
+import { toast } from "@/components/ui/use-toast"
 
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
@@ -115,7 +116,11 @@ export function ProfileSettings() {
 
   const handleInstallApp = async () => {
     if (!deferredPrompt) {
-      alert("O app já está instalado ou não pode ser instalado neste dispositivo.")
+      toast({
+        title: "Instalação Manual",
+        description:
+          "No Chrome/Edge: Menu (⋮) → Instalar ConstruLoc. No Safari iOS: Compartilhar → Adicionar à Tela de Início.",
+      })
       return
     }
 

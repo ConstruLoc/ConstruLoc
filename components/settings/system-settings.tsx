@@ -192,8 +192,9 @@ export function SystemSettings() {
   const handleInstallApp = async () => {
     if (!deferredPrompt) {
       toast({
-        title: "App já instalado",
-        description: "O aplicativo já está instalado ou não pode ser instalado neste dispositivo.",
+        title: "Instalação Manual",
+        description:
+          "No Chrome/Edge: Menu (⋮) → Instalar ConstruLoc. No Safari iOS: Compartilhar → Adicionar à Tela de Início.",
       })
       return
     }

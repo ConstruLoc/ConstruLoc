@@ -1,0 +1,32 @@
+{
+  "name": "ConstruLoc - Sistema de Gerenciamento",
+  "short_name": "ConstruLoc",
+  "description": "Sistema de gerenciamento de locações de equipamentos de construção",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#ea580c",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/images/logo-construloc.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/images/logo-construloc.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["business", "productivity"],
+  "screenshots": [
+    {
+      "src": "/construloc-background.png",
+      "sizes": "1280x720",
+      "type": "image/png"
+    }
+  ]
+}

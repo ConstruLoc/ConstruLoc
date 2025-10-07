@@ -6,7 +6,7 @@ import { AddProductForm } from "@/components/catalogo/add-product-form"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Package, DollarSign, Tag, Loader2, Plus, Edit, Trash2, Eye } from "lucide-react"
+import { Package, DollarSign, Tag, Loader2, Plus, Edit, Trash2, Eye, ExternalLink } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import {
   AlertDialog,
@@ -128,13 +128,23 @@ export default function CatalogoPage() {
               <Package className="h-6 w-6 text-orange-500" />
               Produtos no Catálogo
             </h2>
-            <Button
-              onClick={() => setShowForm(true)}
-              className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-semibold"
-            >
-              <Plus className="mr-2 h-4 w-4" />
-              Adicionar Produto
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                onClick={() => window.open("https://construloccatalogo.vercel.app", "_blank")}
+                variant="outline"
+                className="border-orange-500 text-orange-500 hover:bg-orange-50 font-semibold"
+              >
+                <ExternalLink className="mr-2 h-4 w-4" />
+                Ver Catálogo Público
+              </Button>
+              <Button
+                onClick={() => setShowForm(true)}
+                className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-semibold"
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                Adicionar Produto
+              </Button>
+            </div>
           </div>
         )}
 

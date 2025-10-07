@@ -35,6 +35,18 @@ export function NotificationSetup() {
     setIsDismissed(true)
   }
 
+  const handleRequestPermission = async () => {
+    try {
+      await requestPermission()
+      // If permission granted, dismiss the banner
+      if (Notification.permission === "granted") {
+        handleDismiss()
+      }
+    } catch (error) {
+      console.error("[v0] Error requesting notification permission:", error)
+    }
+  }
+
   if (isDismissed) {
     return null
   }
@@ -53,25 +65,25 @@ export function NotificationSetup() {
 
   if (permission === "default") {
     return (
-      <Card className="border-blue-200 bg-blue-50 relative">
+      <Card className="border-orange-500/30 bg-gray-800/50 relative">
         <button
           onClick={handleDismiss}
-          className="absolute top-4 right-4 text-blue-600 hover:text-blue-800 transition-colors"
+          className="absolute top-4 right-4 text-orange-400 hover:text-orange-300 transition-colors z-10"
           aria-label="Fechar"
         >
           <X className="h-5 w-5" />
         </button>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Bell className="h-5 w-5" />
+          <CardTitle className="flex items-center gap-2 text-white">
+            <Bell className="h-5 w-5 text-orange-500" />
             Ativar Notificações
           </CardTitle>
-          <CardDescription>
+          <CardDescription className="text-gray-300">
             Receba alertas no navegador quando contratos estiverem prestes a vencer ou já vencidos.
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Button onClick={requestPermission} className="w-full">
+          <Button onClick={handleRequestPermission} className="w-full bg-orange-600 hover:bg-orange-700 transition-all">
             <Bell className="h-4 w-4 mr-2" />
             Ativar Notificações
           </Button>
