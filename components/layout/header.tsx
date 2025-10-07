@@ -45,6 +45,15 @@ export function Header({ title = "Dashboard" }: HeaderProps) {
     router.push("/auth/login")
   }
 
+  const handleNavigateToProfile = () => {
+    router.push("/perfil")
+  }
+
+  const handleNavigateToSettings = () => {
+    router.push("/configuracoes")
+  }
+  // </CHANGE>
+
   const getUserInitials = () => {
     if (user?.name) {
       return user.name
@@ -108,14 +117,15 @@ export function Header({ title = "Dashboard" }: HeaderProps) {
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>
+              <DropdownMenuItem onClick={handleNavigateToProfile}>
                 <User className="mr-2 h-4 w-4" />
                 <span>Perfil</span>
               </DropdownMenuItem>
-              <DropdownMenuItem>
+              <DropdownMenuItem onClick={handleNavigateToSettings}>
                 <Settings className="mr-2 h-4 w-4" />
                 <span>Configurações</span>
               </DropdownMenuItem>
+              {/* </CHANGE> */}
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={handleSignOut} className="text-red-600">
                 <LogOut className="mr-2 h-4 w-4" />

@@ -5,12 +5,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Settings, User } from "lucide-react"
 import ProfileSettings from "@/components/settings/profile-settings"
 import SystemSettings from "@/components/settings/system-settings"
+import { MainLayout } from "@/components/layout/main-layout"
 
 export default function ConfiguracoesPage() {
   const [activeTab, setActiveTab] = useState("perfil")
 
   return (
-    <div className="min-h-screen bg-background p-4 md:p-6 lg:p-8">
+    <MainLayout showBackButton={true} title="Configurações">
       <div className="mx-auto max-w-4xl space-y-6">
         {/* Header */}
         <div className="space-y-2">
@@ -49,6 +50,6 @@ export default function ConfiguracoesPage() {
           </TabsContent>
         </Tabs>
       </div>
-    </div>
+    </MainLayout>
   )
 }
