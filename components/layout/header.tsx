@@ -71,14 +71,18 @@ export function Header({ title = "Dashboard" }: HeaderProps) {
 
   const toggleNotifications = () => {
     console.log("[v0] Notifications button clicked, current state:", showNotifications)
-    setShowNotifications(!showNotifications)
+    const newState = !showNotifications
+    setShowNotifications(newState)
     setShowProfileMenu(false)
+    console.log("[v0] Notifications new state:", newState)
   }
 
   const toggleProfileMenu = () => {
     console.log("[v0] Profile menu button clicked, current state:", showProfileMenu)
-    setShowProfileMenu(!showProfileMenu)
+    const newState = !showProfileMenu
+    setShowProfileMenu(newState)
     setShowNotifications(false)
+    console.log("[v0] Profile menu new state:", newState)
   }
 
   const getUserInitials = () => {
@@ -93,16 +97,18 @@ export function Header({ title = "Dashboard" }: HeaderProps) {
     return user?.email?.slice(0, 2).toUpperCase() || "AD"
   }
 
+  console.log("[v0] Header render - showProfileMenu:", showProfileMenu, "showNotifications:", showNotifications)
+
   return (
-    <header className="bg-gray-800 border-b border-gray-700 px-6 py-4 relative overflow-visible">
+    <header className="bg-gray-800 border-b border-gray-700 px-6 py-4">
       <div className="flex items-center justify-between">
         <div className="flex flex-col">
           <h1 className="text-xl font-bold text-orange-500">ConstruLoc</h1>
           <p className="text-sm text-gray-400">Locações de equipamentos</p>
         </div>
 
-        <div className="flex items-center gap-4 relative">
-          <div className="relative z-50" ref={notificationsRef}>
+        <div className="flex items-center gap-4">
+          <div className="relative" ref={notificationsRef}>
             <Button
               variant="ghost"
               size="sm"
@@ -116,82 +122,92 @@ export function Header({ title = "Dashboard" }: HeaderProps) {
             </Button>
 
             {showNotifications && (
-              <>
-                <div className="fixed inset-0 z-[9998]" onClick={() => setShowNotifications(false)} />
-                <div className="fixed right-6 top-16 w-80 bg-gray-800 border border-gray-700 rounded-lg shadow-2xl z-[9999] animate-in fade-in slide-in-from-top-2 duration-200">
-                  <div className="p-4 border-b border-gray-700 flex items-center justify-between">
-                    <h3 className="font-semibold text-white">Notificações</h3>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setShowNotifications(false)}
-                      className="h-6 w-6 p-0 text-gray-400 hover:text-white"
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
+              <div
+                className="absolute right-0 top-full mt-2 w-80 bg-gray-800 border border-gray-700 rounded-lg shadow-2xl z-[99999]"
+                style={{
+                  position: "absolute",
+                  right: 0,
+                  top: "100%",
+                  marginTop: "8px",
+                }}
+              >
+                <div className="p-4 border-b border-gray-700 flex items-center justify-between">
+                  <h3 className="font-semibold text-white">Notificações</h3>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowNotifications(false)}
+                    className="h-6 w-6 p-0 text-gray-400 hover:text-white"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+                <div className="p-4 space-y-3 max-h-96 overflow-y-auto">
+                  <div className="p-3 bg-gray-700/50 rounded-lg hover:bg-gray-700 cursor-pointer transition-colors">
+                    <p className="text-sm text-white font-medium">Contrato próximo do vencimento</p>
+                    <p className="text-xs text-gray-400 mt-1">Contrato #123 vence em 3 dias</p>
                   </div>
-                  <div className="p-4 space-y-3 max-h-96 overflow-y-auto">
-                    <div className="p-3 bg-gray-700/50 rounded-lg hover:bg-gray-700 cursor-pointer transition-colors">
-                      <p className="text-sm text-white font-medium">Contrato próximo do vencimento</p>
-                      <p className="text-xs text-gray-400 mt-1">Contrato #123 vence em 3 dias</p>
-                    </div>
-                    <div className="p-3 bg-gray-700/50 rounded-lg hover:bg-gray-700 cursor-pointer transition-colors">
-                      <p className="text-sm text-white font-medium">Novo equipamento disponível</p>
-                      <p className="text-xs text-gray-400 mt-1">Betoneira 400L está disponível para locação</p>
-                    </div>
-                    <div className="p-3 bg-gray-700/50 rounded-lg hover:bg-gray-700 cursor-pointer transition-colors">
-                      <p className="text-sm text-white font-medium">Pagamento recebido</p>
-                      <p className="text-xs text-gray-400 mt-1">Pagamento de R$ 450,00 confirmado</p>
-                    </div>
+                  <div className="p-3 bg-gray-700/50 rounded-lg hover:bg-gray-700 cursor-pointer transition-colors">
+                    <p className="text-sm text-white font-medium">Novo equipamento disponível</p>
+                    <p className="text-xs text-gray-400 mt-1">Betoneira 400L está disponível para locação</p>
+                  </div>
+                  <div className="p-3 bg-gray-700/50 rounded-lg hover:bg-gray-700 cursor-pointer transition-colors">
+                    <p className="text-sm text-white font-medium">Pagamento recebido</p>
+                    <p className="text-xs text-gray-400 mt-1">Pagamento de R$ 450,00 confirmado</p>
                   </div>
                 </div>
-              </>
+              </div>
             )}
           </div>
 
-          <div className="relative z-50" ref={profileMenuRef}>
-            <Button variant="ghost" className="relative h-10 w-10 rounded-full" onClick={toggleProfileMenu}>
+          <div className="relative" ref={profileMenuRef}>
+            <Button variant="ghost" className="relative h-10 w-10 rounded-full p-0" onClick={toggleProfileMenu}>
               <Avatar className="h-10 w-10">
                 <AvatarFallback className="bg-orange-500 text-white font-medium">{getUserInitials()}</AvatarFallback>
               </Avatar>
             </Button>
 
             {showProfileMenu && (
-              <>
-                <div className="fixed inset-0 z-[9998]" onClick={() => setShowProfileMenu(false)} />
-                <div className="fixed right-6 top-16 w-56 bg-gray-800 border border-gray-700 rounded-lg shadow-2xl z-[9999] animate-in fade-in slide-in-from-top-2 duration-200">
-                  <div className="p-3 border-b border-gray-700">
-                    <p className="text-sm font-medium text-white">{user?.name || "Administrador"}</p>
-                    <p className="text-xs text-gray-400 mt-1">{user?.email || "admin@construloc.com"}</p>
-                    <p className="text-xs text-gray-400">Administrador</p>
-                  </div>
-                  <div className="py-2">
-                    <button
-                      onClick={handleNavigateToProfile}
-                      className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-white transition-colors"
-                    >
-                      <User className="h-4 w-4" />
-                      <span>Perfil</span>
-                    </button>
-                    <button
-                      onClick={handleNavigateToSettings}
-                      className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-white transition-colors"
-                    >
-                      <Settings className="h-4 w-4" />
-                      <span>Configurações</span>
-                    </button>
-                  </div>
-                  <div className="border-t border-gray-700 py-2">
-                    <button
-                      onClick={handleSignOut}
-                      className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-400 hover:bg-gray-700 hover:text-red-300 transition-colors"
-                    >
-                      <LogOut className="h-4 w-4" />
-                      <span>Sair</span>
-                    </button>
-                  </div>
+              <div
+                className="absolute right-0 top-full mt-2 w-56 bg-gray-800 border border-gray-700 rounded-lg shadow-2xl z-[99999]"
+                style={{
+                  position: "absolute",
+                  right: 0,
+                  top: "100%",
+                  marginTop: "8px",
+                }}
+              >
+                <div className="p-3 border-b border-gray-700">
+                  <p className="text-sm font-medium text-white">{user?.name || "Administrador"}</p>
+                  <p className="text-xs text-gray-400 mt-1">{user?.email || "admin@construloc.com"}</p>
+                  <p className="text-xs text-gray-400">Administrador</p>
                 </div>
-              </>
+                <div className="py-2">
+                  <button
+                    onClick={handleNavigateToProfile}
+                    className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-white transition-colors"
+                  >
+                    <User className="h-4 w-4" />
+                    <span>Perfil</span>
+                  </button>
+                  <button
+                    onClick={handleNavigateToSettings}
+                    className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-white transition-colors"
+                  >
+                    <Settings className="h-4 w-4" />
+                    <span>Configurações</span>
+                  </button>
+                </div>
+                <div className="border-t border-gray-700 py-2">
+                  <button
+                    onClick={handleSignOut}
+                    className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-400 hover:bg-gray-700 hover:text-red-300 transition-colors"
+                  >
+                    <LogOut className="h-4 w-4" />
+                    <span>Sair</span>
+                  </button>
+                </div>
+              </div>
             )}
           </div>
         </div>
