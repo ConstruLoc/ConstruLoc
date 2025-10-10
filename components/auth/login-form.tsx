@@ -7,7 +7,6 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
 import { useState, useEffect } from "react"
 import { useToast } from "@/hooks/use-toast"
 import { createClient } from "@/lib/supabase/client"
@@ -17,7 +16,6 @@ export function LoginForm() {
   const [password, setPassword] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [rememberMe, setRememberMe] = useState(false)
-  const router = useRouter()
   const { toast } = useToast()
 
   useEffect(() => {
@@ -52,13 +50,13 @@ export function LoginForm() {
       }
 
       const supabase = createClient()
+
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       })
 
       if (error) {
-        console.error("[v0] Login error:", error)
         toast({
           title: "Erro no login",
           description:
@@ -72,8 +70,6 @@ export function LoginForm() {
       }
 
       if (data.user) {
-        console.log("[v0] Login successful, user:", data.user.email)
-
         // Salvar preferências de "lembrar-me"
         if (rememberMe) {
           localStorage.setItem("construloc_remember_me", "true")
@@ -83,12 +79,9 @@ export function LoginForm() {
           localStorage.removeItem("construloc_user_email")
         }
 
-        // Redirecionar para o dashboard
-        router.push("/dashboard")
-        router.refresh()
+        window.location.href = "/dashboard"
       }
     } catch (error: any) {
-      console.error("[v0] Login exception:", error)
       toast({
         title: "Erro no login",
         description: "Não foi possível realizar o login. Verifique sua conexão e tente novamente.",

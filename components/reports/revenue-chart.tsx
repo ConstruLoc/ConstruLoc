@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts"
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts"
 
 export function RevenueChart() {
   const [data, setData] = useState<any[]>([])
@@ -19,7 +19,6 @@ export function RevenueChart() {
   const fetchRevenueData = async () => {
     setIsLoading(true)
     try {
-      // Calculate date range based on period
       const endDate = new Date()
       const startDate = new Date()
 
@@ -43,7 +42,6 @@ export function RevenueChart() {
 
       if (error) throw error
 
-      // Group by month
       const monthlyData: { [key: string]: number } = {}
 
       contracts?.forEach((contract) => {
@@ -52,7 +50,6 @@ export function RevenueChart() {
         monthlyData[monthKey] = (monthlyData[monthKey] || 0) + (contract.valor_total || 0)
       })
 
-      // Convert to chart format
       const chartData = Object.entries(monthlyData)
         .map(([month, revenue]) => ({
           month: new Date(month + "-01").toLocaleDateString("pt-BR", { month: "short", year: "numeric" }),
@@ -69,11 +66,11 @@ export function RevenueChart() {
   }
 
   return (
-    <Card className="bg-gray-800/50 border-gray-700">
+    <Card className="bg-gradient-to-br from-gray-800 to-gray-900 border-gray-700 shadow-xl">
       <CardHeader>
         <div className="flex items-center justify-between">
           <div>
-            <CardTitle className="text-white">Receita por Período</CardTitle>
+            <CardTitle className="text-white text-xl font-bold">Receita por Período</CardTitle>
             <CardDescription className="text-gray-400">Evolução da receita ao longo do tempo</CardDescription>
           </div>
           <Select value={period} onValueChange={setPeriod}>
@@ -91,7 +88,7 @@ export function RevenueChart() {
       <CardContent>
         {isLoading ? (
           <div className="h-80 flex items-center justify-center">
-            <p className="text-gray-400">Carregando dados...</p>
+            <div className="animate-pulse text-gray-400">Carregando dados...</div>
           </div>
         ) : data.length === 0 ? (
           <div className="h-80 flex items-center justify-center">
@@ -99,7 +96,13 @@ export function RevenueChart() {
           </div>
         ) : (
           <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={data}>
+            <AreaChart data={data}>
+              <defs>
+                <linearGradient id="colorReceita" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#ea580c" stopOpacity={0.8} />
+                  <stop offset="95%" stopColor="#ea580c" stopOpacity={0.1} />
+                </linearGradient>
+              </defs>
               <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
               <XAxis dataKey="month" stroke="#9CA3AF" />
               <YAxis tickFormatter={(value) => `R$ ${value.toLocaleString()}`} stroke="#9CA3AF" />
@@ -111,8 +114,8 @@ export function RevenueChart() {
                   "Receita",
                 ]}
               />
-              <Bar dataKey="receita" fill="#ea580c" />
-            </BarChart>
+              <Area type="monotone" dataKey="receita" stroke="#ea580c" fillOpacity={1} fill="url(#colorReceita)" />
+            </AreaChart>
           </ResponsiveContainer>
         )}
       </CardContent>

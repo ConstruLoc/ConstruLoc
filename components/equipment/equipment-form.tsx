@@ -25,6 +25,7 @@ export function EquipmentForm({ equipment, categories, onSuccess }: EquipmentFor
     nome: equipment?.nome || "",
     descricao: equipment?.descricao || "",
     numero_serie: equipment?.numero_serie || "",
+    localizacao: equipment?.localizacao || "",
     valor_diario: equipment?.valor_diario || "",
     categoria_id: equipment?.categoria_id || "",
     status: equipment?.status || "disponivel",
@@ -85,11 +86,11 @@ export function EquipmentForm({ equipment, categories, onSuccess }: EquipmentFor
         imageUrl = result.url
       }
 
-      if (formData.numero_serie && !equipment?.id) {
+      if (formData.numero_serie && formData.numero_serie.trim() !== "" && !equipment?.id) {
         const { data: existingEquipment } = await supabase
           .from("equipamentos")
           .select("id")
-          .eq("numero_serie", formData.numero_serie)
+          .eq("numero_serie", formData.numero_serie.trim())
           .single()
 
         if (existingEquipment) {
@@ -100,7 +101,8 @@ export function EquipmentForm({ equipment, categories, onSuccess }: EquipmentFor
       const equipmentData = {
         nome: formData.nome,
         descricao: formData.descricao,
-        numero_serie: formData.numero_serie,
+        numero_serie: formData.numero_serie.trim() || null,
+        localizacao: formData.localizacao.trim() || null,
         valor_diario: Number.parseFloat(formData.valor_diario.toString()),
         categoria_id: formData.categoria_id.trim(),
         status: formData.status,
@@ -240,6 +242,19 @@ export function EquipmentForm({ equipment, categories, onSuccess }: EquipmentFor
               value={formData.numero_serie}
               onChange={(e) => handleInputChange("numero_serie", e.target.value)}
               placeholder="Ex: BT400-001"
+              className="bg-gray-700 border-gray-600 text-white placeholder:text-gray-500 focus:border-orange-500 focus:ring-orange-500 h-12 text-base"
+            />
+          </div>
+
+          <div className="space-y-3">
+            <Label htmlFor="localizacao" className="text-white font-semibold">
+              Localização
+            </Label>
+            <Input
+              id="localizacao"
+              value={formData.localizacao}
+              onChange={(e) => handleInputChange("localizacao", e.target.value)}
+              placeholder="Ex: Galpão A - Prateleira 3"
               className="bg-gray-700 border-gray-600 text-white placeholder:text-gray-500 focus:border-orange-500 focus:ring-orange-500 h-12 text-base"
             />
           </div>

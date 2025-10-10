@@ -127,6 +127,7 @@ export function ClientForm({ client, onSuccess }: ClientFormProps) {
     try {
       const clientData = {
         ...formData,
+        email: formData.email.trim() || null, // Send null if email is empty
         documento: formData.documento.replace(/\D/g, ""), // Store only numbers
         telefone: formData.telefone.replace(/\D/g, ""), // Store only numbers
         cep: formData.cep.replace(/\D/g, ""), // Store only numbers
@@ -184,7 +185,7 @@ export function ClientForm({ client, onSuccess }: ClientFormProps) {
           {/* Personal Information Section */}
           <div className="space-y-4">
             <div className="flex items-center gap-2 pb-2 border-b border-slate-700">
-              <div className="h-1 w-8 bg-orange-600 rounded-full" />
+              <div className="h-1 w-8 bg-orange-600/10 rounded-full" />
               <h3 className="text-lg font-semibold text-white">Informações Pessoais</h3>
             </div>
 
@@ -294,7 +295,7 @@ export function ClientForm({ client, onSuccess }: ClientFormProps) {
           {/* Address Section */}
           <div className="space-y-4">
             <div className="flex items-center gap-2 pb-2 border-b border-slate-700">
-              <div className="h-1 w-8 bg-orange-600 rounded-full" />
+              <div className="h-1 w-8 bg-orange-600/10 rounded-full" />
               <h3 className="text-lg font-semibold text-white">Endereço</h3>
             </div>
 
@@ -356,7 +357,7 @@ export function ClientForm({ client, onSuccess }: ClientFormProps) {
           {/* Additional Information Section */}
           <div className="space-y-4">
             <div className="flex items-center gap-2 pb-2 border-b border-slate-700">
-              <div className="h-1 w-8 bg-orange-600 rounded-full" />
+              <div className="h-1 w-8 bg-orange-600/10 rounded-full" />
               <h3 className="text-lg font-semibold text-white">Informações Adicionais</h3>
             </div>
 

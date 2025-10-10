@@ -1,5 +1,7 @@
 "use client"
 
+import type React from "react"
+
 import { useState, useEffect, useRef } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
@@ -47,7 +49,7 @@ export function ClientList() {
     clientName: "",
   })
   const [openMenuId, setOpenMenuId] = useState<string | null>(null)
-  const menuRef = useRef<HTMLDivElement>(null)
+  const menuRefs = useRef<{ [key: string]: HTMLDivElement | null }>({})
   const supabase = createClient()
   const { toast } = useToast()
 
@@ -61,14 +63,19 @@ export function ClientList() {
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-        setOpenMenuId(null)
+      if (openMenuId && menuRefs.current[openMenuId]) {
+        const menuElement = menuRefs.current[openMenuId]
+        const target = event.target as Node
+
+        if (menuElement && !menuElement.contains(target)) {
+          setOpenMenuId(null)
+        }
       }
     }
 
     if (openMenuId) {
-      document.addEventListener("mousedown", handleClickOutside)
-      return () => document.removeEventListener("mousedown", handleClickOutside)
+      document.addEventListener("click", handleClickOutside)
+      return () => document.removeEventListener("click", handleClickOutside)
     }
   }, [openMenuId])
 
@@ -121,6 +128,7 @@ export function ClientList() {
   }
 
   const handleDeleteClick = (id: string, name: string) => {
+    console.log("[v0] Delete clicked for client:", name, id)
     setOpenMenuId(null)
     setDeleteConfirmState({
       isOpen: true,
@@ -175,6 +183,11 @@ export function ClientList() {
     }
   }
 
+  const handleMenuToggle = (clientId: string, e: React.MouseEvent<HTMLButtonElement>) => {
+    e.stopPropagation()
+    setOpenMenuId(openMenuId === clientId ? null : clientId)
+  }
+
   if (isLoading) {
     return <div className="flex justify-center p-8">Carregando clientes...</div>
   }
@@ -223,17 +236,17 @@ export function ClientList() {
           </div>
         </div>
 
-        <div className="hidden md:block rounded-md border border-gray-800 bg-gray-900 overflow-x-auto">
+        <div className="hidden md:block rounded-md border border-gray-800 bg-gray-900 overflow-visible">
           <table className="w-full">
             <thead>
               <tr>
-                <th className="text-left px-4 py-2">Nome</th>
-                <th className="text-left px-4 py-2">Tipo</th>
-                <th className="text-left px-4 py-2">Documento</th>
-                <th className="text-left px-4 py-2">Email</th>
-                <th className="text-left px-4 py-2">Telefone</th>
-                <th className="text-left px-4 py-2">Localização</th>
-                <th className="text-left px-4 py-2 w-[70px]">Ações</th>
+                <th className="text-left px-4 py-3 text-sm font-medium text-gray-400 min-w-[200px]">Nome</th>
+                <th className="text-left px-4 py-3 text-sm font-medium text-gray-400">Tipo</th>
+                <th className="text-left px-4 py-3 text-sm font-medium text-gray-400">Documento</th>
+                <th className="text-left px-4 py-3 text-sm font-medium text-gray-400">Email</th>
+                <th className="text-left px-4 py-3 text-sm font-medium text-gray-400">Telefone</th>
+                <th className="text-left px-4 py-3 text-sm font-medium text-gray-400">Localização</th>
+                <th className="text-left px-4 py-3 text-sm font-medium text-gray-400 w-[70px]">Ações</th>
               </tr>
             </thead>
             <tbody>
@@ -245,53 +258,61 @@ export function ClientList() {
                 </tr>
               ) : (
                 filteredClients.map((client) => (
-                  <tr key={client.id}>
-                    <td className="px-4 py-2">
-                      <div className="flex items-center gap-2">
-                        <div className="font-medium">{client.nome}</div>
-                        {client.empresa && <div className="text-sm text-orange-400">({client.empresa})</div>}
-                      </div>
-                    </td>
-                    <td className="px-4 py-2">
-                      <div className="flex items-center gap-1 w-fit border-orange-500/30">
-                        {client.tipo_documento === "CPF" ? (
-                          <User className="h-3 w-3 text-orange-400" />
-                        ) : (
-                          <Building className="h-3 w-3 text-orange-400" />
+                  <tr key={client.id} className="border-t border-gray-800 hover:bg-gray-800/50 transition-colors">
+                    <td className="px-4 py-3 min-w-[200px]">
+                      <div className="flex flex-col gap-1">
+                        <div className="font-medium text-gray-100 whitespace-nowrap">{client.nome}</div>
+                        {client.empresa && (
+                          <div className="text-xs text-orange-400 whitespace-nowrap">{client.empresa}</div>
                         )}
-                        {client.tipo_documento}
                       </div>
                     </td>
-                    <td className="font-mono text-sm px-4 py-2">
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-1.5 text-sm">
+                        {client.tipo_documento === "CPF" ? (
+                          <User className="h-3.5 w-3.5 text-orange-400" />
+                        ) : (
+                          <Building className="h-3.5 w-3.5 text-orange-400" />
+                        )}
+                        <span className="text-gray-300">{client.tipo_documento}</span>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 font-mono text-sm text-gray-300">
                       {formatDocument(client.documento, client.tipo_documento)}
                     </td>
-                    <td className="px-4 py-2">{client.email}</td>
-                    <td className="px-4 py-2">{formatPhone(client.telefone)}</td>
-                    <td className="px-4 py-2">
+                    <td className="px-4 py-3 text-sm text-gray-300">{client.email || "-"}</td>
+                    <td className="px-4 py-3 text-sm text-gray-300 whitespace-nowrap">
+                      {formatPhone(client.telefone)}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-gray-300">
                       {client.cidade && client.estado ? `${client.cidade}, ${client.estado}` : "-"}
                     </td>
-                    <td className="px-4 py-2">
-                      <div className="relative" ref={openMenuId === client.id ? menuRef : null}>
+                    <td className="px-4 py-3">
+                      <div className="relative">
                         <Button
                           variant="ghost"
-                          className="h-8 w-8 p-0"
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            setOpenMenuId(openMenuId === client.id ? null : client.id)
-                          }}
+                          className="h-8 w-8 p-0 hover:bg-gray-700"
+                          onClick={(e) => handleMenuToggle(client.id, e)}
                         >
                           <MoreHorizontal className="h-4 w-4" />
                         </Button>
+
                         {openMenuId === client.id && (
                           <div
-                            className="absolute right-0 mt-2 w-48 rounded-md border border-gray-700 bg-gray-800 shadow-lg z-[10000]"
-                            style={{ zIndex: 10000 }}
+                            ref={(el) => {
+                              menuRefs.current[client.id] = el
+                            }}
+                            className="absolute right-0 top-full mt-1 w-44 rounded-md border border-gray-700 bg-gray-800 shadow-lg z-[10000]"
                           >
                             <div className="py-1">
                               <Link
                                 href={`/clientes/${client.id}`}
                                 className="flex items-center px-4 py-2 text-sm text-gray-200 hover:bg-gray-700 transition-colors"
-                                onClick={() => setOpenMenuId(null)}
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  console.log("[v0] Ver detalhes clicked for client:", client.nome, client.id)
+                                  setOpenMenuId(null)
+                                }}
                               >
                                 <Eye className="mr-2 h-4 w-4" />
                                 Ver detalhes
@@ -299,13 +320,20 @@ export function ClientList() {
                               <Link
                                 href={`/clientes/${client.id}/editar`}
                                 className="flex items-center px-4 py-2 text-sm text-gray-200 hover:bg-gray-700 transition-colors"
-                                onClick={() => setOpenMenuId(null)}
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  console.log("[v0] Editar clicked for client:", client.nome, client.id)
+                                  setOpenMenuId(null)
+                                }}
                               >
                                 <Edit className="mr-2 h-4 w-4" />
                                 Editar
                               </Link>
                               <button
-                                onClick={() => handleDeleteClick(client.id, client.nome)}
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  handleDeleteClick(client.id, client.nome)
+                                }}
                                 className="flex items-center w-full px-4 py-2 text-sm text-red-400 hover:bg-gray-700 transition-colors"
                               >
                                 <Trash2 className="mr-2 h-4 w-4" />
@@ -343,27 +371,27 @@ export function ClientList() {
                         {client.tipo_documento}
                       </div>
                     </div>
-                    <div className="relative" ref={openMenuId === client.id ? menuRef : null}>
-                      <Button
-                        variant="ghost"
-                        className="h-8 w-8 p-0"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          setOpenMenuId(openMenuId === client.id ? null : client.id)
-                        }}
-                      >
+                    <div className="relative">
+                      <Button variant="ghost" className="h-8 w-8 p-0" onClick={(e) => handleMenuToggle(client.id, e)}>
                         <MoreHorizontal className="h-4 w-4" />
                       </Button>
+
                       {openMenuId === client.id && (
                         <div
-                          className="absolute right-0 mt-2 w-48 rounded-md border border-gray-700 bg-gray-800 shadow-lg z-[10000]"
-                          style={{ zIndex: 10000 }}
+                          ref={(el) => {
+                            menuRefs.current[client.id] = el
+                          }}
+                          className="absolute right-0 top-full mt-1 w-44 rounded-md border border-gray-700 bg-gray-800 shadow-lg z-[10000]"
                         >
                           <div className="py-1">
                             <Link
                               href={`/clientes/${client.id}`}
                               className="flex items-center px-4 py-2 text-sm text-gray-200 hover:bg-gray-700 transition-colors"
-                              onClick={() => setOpenMenuId(null)}
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                console.log("[v0] Ver detalhes clicked for client (mobile):", client.nome, client.id)
+                                setOpenMenuId(null)
+                              }}
                             >
                               <Eye className="mr-2 h-4 w-4" />
                               Ver detalhes
@@ -371,13 +399,20 @@ export function ClientList() {
                             <Link
                               href={`/clientes/${client.id}/editar`}
                               className="flex items-center px-4 py-2 text-sm text-gray-200 hover:bg-gray-700 transition-colors"
-                              onClick={() => setOpenMenuId(null)}
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                console.log("[v0] Editar clicked for client (mobile):", client.nome, client.id)
+                                setOpenMenuId(null)
+                              }}
                             >
                               <Edit className="mr-2 h-4 w-4" />
                               Editar
                             </Link>
                             <button
-                              onClick={() => handleDeleteClick(client.id, client.nome)}
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                handleDeleteClick(client.id, client.nome)
+                              }}
                               className="flex items-center w-full px-4 py-2 text-sm text-red-400 hover:bg-gray-700 transition-colors"
                             >
                               <Trash2 className="mr-2 h-4 w-4" />

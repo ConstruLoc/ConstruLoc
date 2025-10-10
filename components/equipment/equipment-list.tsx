@@ -1,15 +1,8 @@
 "use client"
 
-import { SelectItem } from "@/components/ui/select"
-
-import { SelectContent } from "@/components/ui/select"
-
-import { SelectValue } from "@/components/ui/select"
-
-import { SelectTrigger } from "@/components/ui/select"
-
 import { Select } from "@/components/ui/select"
 
+import { SelectItem, SelectContent, SelectValue, SelectTrigger } from "@/components/ui/select"
 import { useState, useEffect, useRef } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
@@ -428,7 +421,7 @@ export function EquipmentList() {
                 key={equipment.id}
                 className="group hover:shadow-xl transition-all duration-300 border-0 shadow-md overflow-hidden bg-gray-800 border-gray-700 relative"
               >
-                <div className="absolute top-2 left-2 z-10" ref={openMenuId === equipment.id ? menuRef : null}>
+                <div className="absolute top-2 left-2 z-10">
                   <Button
                     variant="secondary"
                     size="sm"
@@ -442,7 +435,8 @@ export function EquipmentList() {
                   </Button>
                   {openMenuId === equipment.id && (
                     <div
-                      className="absolute left-0 mt-2 w-48 rounded-md border border-gray-700 bg-gray-800 shadow-lg"
+                      ref={menuRef}
+                      className="absolute left-full ml-2 top-0 w-44 rounded-md border border-gray-700 bg-gray-800 shadow-lg"
                       style={{ zIndex: 10000 }}
                     >
                       <div className="py-1">

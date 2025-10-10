@@ -2,14 +2,23 @@ import { createServerClient } from "@supabase/ssr"
 import { NextResponse, type NextRequest } from "next/server"
 
 export async function updateSession(request: NextRequest) {
-  let supabaseResponse = NextResponse.next({
-    request,
-  })
+  try {
+    console.log("[v0] Middleware: Processing request for", request.nextUrl.pathname)
 
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
+    let supabaseResponse = NextResponse.next({
+      request,
+    })
+
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+    if (!supabaseUrl || !supabaseAnonKey) {
+      console.error("[v0] Supabase environment variables not configured")
+      // Return without auth check if Supabase is not configured
+      return supabaseResponse
+    }
+
+    const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
       cookies: {
         getAll() {
           return request.cookies.getAll()
@@ -22,13 +31,13 @@ export async function updateSession(request: NextRequest) {
           cookiesToSet.forEach(({ name, value, options }) => supabaseResponse.cookies.set(name, value, options))
         },
       },
-    },
-  )
+    })
 
-  try {
     const {
       data: { user },
     } = await supabase.auth.getUser()
+
+    console.log("[v0] Middleware: User authenticated:", !!user, "Path:", request.nextUrl.pathname)
 
     // Check if user is trying to access protected routes
     const isProtectedRoute =
@@ -50,20 +59,26 @@ export async function updateSession(request: NextRequest) {
 
     // Redirect logic
     if (!user && isProtectedRoute) {
+      console.log("[v0] Middleware: Redirecting to login (no user, protected route)")
       const url = request.nextUrl.clone()
       url.pathname = "/"
       return NextResponse.redirect(url)
     }
 
     if (user && isAuthRoute && request.nextUrl.pathname === "/") {
+      console.log("[v0] Middleware: Redirecting to dashboard (user authenticated, on login page)")
       const url = request.nextUrl.clone()
       url.pathname = "/dashboard"
       return NextResponse.redirect(url)
     }
-  } catch (error) {
-    console.error("[v0] Supabase auth error in middleware:", error)
-    // Allow the request to continue even if auth check fails
-  }
 
-  return supabaseResponse
+    console.log("[v0] Middleware: Allowing request to proceed")
+    return supabaseResponse
+  } catch (error) {
+    console.error("[v0] Middleware error:", error)
+    // Return a valid response even if there's an error
+    return NextResponse.next({
+      request,
+    })
+  }
 }

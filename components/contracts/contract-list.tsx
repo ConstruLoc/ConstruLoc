@@ -523,7 +523,7 @@ export function ContractList() {
                             </Button>
                             {openMenuId === contract.id && (
                               <div
-                                className="absolute right-0 mt-2 w-48 rounded-md border border-gray-700 bg-gray-800 shadow-lg"
+                                className="absolute right-0 top-full mt-1 w-44 rounded-md border border-gray-700 bg-gray-800 shadow-lg"
                                 style={{ zIndex: 10000 }}
                               >
                                 <div className="py-1">
@@ -615,7 +615,7 @@ export function ContractList() {
                           </Button>
                           {openMenuId === contract.id && (
                             <div
-                              className="absolute right-0 mt-2 w-48 rounded-md border border-gray-700 bg-gray-800 shadow-lg"
+                              className="absolute right-0 top-full mt-1 w-44 rounded-md border border-gray-700 bg-gray-800 shadow-lg"
                               style={{ zIndex: 10000 }}
                             >
                               <div className="py-1">
