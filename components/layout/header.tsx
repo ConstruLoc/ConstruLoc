@@ -1,5 +1,7 @@
 "use client"
 
+import type React from "react"
+
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Bell, LogOut, User, Settings, X } from "lucide-react"
@@ -17,6 +19,8 @@ export function Header({ title = "Dashboard" }: HeaderProps) {
   const router = useRouter()
   const profileMenuRef = useRef<HTMLDivElement>(null)
   const notificationsRef = useRef<HTMLDivElement>(null)
+  const profileButtonRef = useRef<HTMLButtonElement>(null)
+  const notificationsButtonRef = useRef<HTMLButtonElement>(null)
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -33,11 +37,24 @@ export function Header({ title = "Dashboard" }: HeaderProps) {
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      if (profileMenuRef.current && !profileMenuRef.current.contains(event.target as Node)) {
+      const target = event.target as Node
+
+      if (
+        profileMenuRef.current &&
+        !profileMenuRef.current.contains(target) &&
+        profileButtonRef.current &&
+        !profileButtonRef.current.contains(target)
+      ) {
         console.log("[v0] Closing profile menu - clicked outside")
         setShowProfileMenu(false)
       }
-      if (notificationsRef.current && !notificationsRef.current.contains(event.target as Node)) {
+
+      if (
+        notificationsRef.current &&
+        !notificationsRef.current.contains(target) &&
+        notificationsButtonRef.current &&
+        !notificationsButtonRef.current.contains(target)
+      ) {
         console.log("[v0] Closing notifications - clicked outside")
         setShowNotifications(false)
       }
@@ -69,7 +86,8 @@ export function Header({ title = "Dashboard" }: HeaderProps) {
     router.push("/configuracoes")
   }
 
-  const toggleNotifications = () => {
+  const toggleNotifications = (e: React.MouseEvent) => {
+    e.stopPropagation()
     console.log("[v0] Notifications button clicked, current state:", showNotifications)
     const newState = !showNotifications
     setShowNotifications(newState)
@@ -77,7 +95,8 @@ export function Header({ title = "Dashboard" }: HeaderProps) {
     console.log("[v0] Notifications new state:", newState)
   }
 
-  const toggleProfileMenu = () => {
+  const toggleProfileMenu = (e: React.MouseEvent) => {
+    e.stopPropagation()
     console.log("[v0] Profile menu button clicked, current state:", showProfileMenu)
     const newState = !showProfileMenu
     setShowProfileMenu(newState)
@@ -110,6 +129,7 @@ export function Header({ title = "Dashboard" }: HeaderProps) {
         <div className="flex items-center gap-4">
           <div className="relative" ref={notificationsRef}>
             <Button
+              ref={notificationsButtonRef}
               variant="ghost"
               size="sm"
               className="relative text-gray-300 hover:text-white hover:bg-gray-700"
@@ -123,8 +143,9 @@ export function Header({ title = "Dashboard" }: HeaderProps) {
 
             {showNotifications && (
               <div
-                className="absolute right-0 top-full mt-2 w-80 bg-gray-800 border border-gray-700 rounded-lg shadow-2xl z-[99999]"
+                className="absolute right-0 mt-2 w-80 bg-gray-800 border border-gray-700 rounded-lg shadow-2xl"
                 style={{
+                  zIndex: 99999,
                   position: "absolute",
                   right: 0,
                   top: "100%",
@@ -136,7 +157,10 @@ export function Header({ title = "Dashboard" }: HeaderProps) {
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => setShowNotifications(false)}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      setShowNotifications(false)
+                    }}
                     className="h-6 w-6 p-0 text-gray-400 hover:text-white"
                   >
                     <X className="h-4 w-4" />
@@ -161,7 +185,12 @@ export function Header({ title = "Dashboard" }: HeaderProps) {
           </div>
 
           <div className="relative" ref={profileMenuRef}>
-            <Button variant="ghost" className="relative h-10 w-10 rounded-full p-0" onClick={toggleProfileMenu}>
+            <Button
+              ref={profileButtonRef}
+              variant="ghost"
+              className="relative h-10 w-10 rounded-full p-0"
+              onClick={toggleProfileMenu}
+            >
               <Avatar className="h-10 w-10">
                 <AvatarFallback className="bg-orange-500 text-white font-medium">{getUserInitials()}</AvatarFallback>
               </Avatar>
@@ -169,8 +198,9 @@ export function Header({ title = "Dashboard" }: HeaderProps) {
 
             {showProfileMenu && (
               <div
-                className="absolute right-0 top-full mt-2 w-56 bg-gray-800 border border-gray-700 rounded-lg shadow-2xl z-[99999]"
+                className="absolute right-0 mt-2 w-56 bg-gray-800 border border-gray-700 rounded-lg shadow-2xl"
                 style={{
+                  zIndex: 99999,
                   position: "absolute",
                   right: 0,
                   top: "100%",
@@ -184,14 +214,20 @@ export function Header({ title = "Dashboard" }: HeaderProps) {
                 </div>
                 <div className="py-2">
                   <button
-                    onClick={handleNavigateToProfile}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      handleNavigateToProfile()
+                    }}
                     className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-white transition-colors"
                   >
                     <User className="h-4 w-4" />
                     <span>Perfil</span>
                   </button>
                   <button
-                    onClick={handleNavigateToSettings}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      handleNavigateToSettings()
+                    }}
                     className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-white transition-colors"
                   >
                     <Settings className="h-4 w-4" />
@@ -200,7 +236,10 @@ export function Header({ title = "Dashboard" }: HeaderProps) {
                 </div>
                 <div className="border-t border-gray-700 py-2">
                   <button
-                    onClick={handleSignOut}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      handleSignOut()
+                    }}
                     className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-400 hover:bg-gray-700 hover:text-red-300 transition-colors"
                   >
                     <LogOut className="h-4 w-4" />

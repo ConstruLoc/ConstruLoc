@@ -10,6 +10,7 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useState, useEffect } from "react"
 import { useToast } from "@/hooks/use-toast"
+import { createClient } from "@/lib/supabase/client"
 
 export function LoginForm() {
   const [email, setEmail] = useState("")
@@ -50,17 +51,44 @@ export function LoginForm() {
         return
       }
 
-      // Redirect imediato para o dashboard
-      if (rememberMe) {
-        localStorage.setItem("construloc_remember_me", "true")
-        localStorage.setItem("construloc_user_email", email)
-      } else {
-        localStorage.removeItem("construloc_remember_me")
-        localStorage.removeItem("construloc_user_email")
+      const supabase = createClient()
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      })
+
+      if (error) {
+        console.error("[v0] Login error:", error)
+        toast({
+          title: "Erro no login",
+          description:
+            error.message === "Invalid login credentials"
+              ? "Email ou senha incorretos"
+              : "Não foi possível realizar o login. Tente novamente.",
+          variant: "destructive",
+        })
+        setIsLoading(false)
+        return
       }
 
-      router.push("/dashboard")
+      if (data.user) {
+        console.log("[v0] Login successful, user:", data.user.email)
+
+        // Salvar preferências de "lembrar-me"
+        if (rememberMe) {
+          localStorage.setItem("construloc_remember_me", "true")
+          localStorage.setItem("construloc_user_email", email)
+        } else {
+          localStorage.removeItem("construloc_remember_me")
+          localStorage.removeItem("construloc_user_email")
+        }
+
+        // Redirecionar para o dashboard
+        router.push("/dashboard")
+        router.refresh()
+      }
     } catch (error: any) {
+      console.error("[v0] Login exception:", error)
       toast({
         title: "Erro no login",
         description: "Não foi possível realizar o login. Verifique sua conexão e tente novamente.",

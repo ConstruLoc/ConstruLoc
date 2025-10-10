@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useRouter } from "next/navigation"
-import { Loader2, Search, Package, X, CheckCircle2, AlertCircle, XCircle } from "lucide-react"
+import { Loader2, Search, Package, X, CheckCircle2, AlertCircle, XCircle, MapPin } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import Image from "next/image"
 
@@ -59,6 +59,7 @@ export function ContractCreationForm({ contract, onSuccess }: ContractCreationFo
     status: contract?.status || "pendente",
     status_pagamento: "pendente",
     observacoes: contract?.observacoes || "",
+    endereco_instalacao: contract?.endereco_instalacao || "",
   })
 
   const [items, setItems] = useState<ContractItem[]>(contract?.itens_contrato || [])
@@ -292,6 +293,7 @@ export function ContractCreationForm({ contract, onSuccess }: ContractCreationFo
         data_fim: formData.data_fim,
         status: formData.status,
         observacoes: formData.observacoes,
+        endereco_instalacao: formData.endereco_instalacao,
         valor_total: calculateTotal(),
       }
 
@@ -415,6 +417,22 @@ export function ContractCreationForm({ contract, onSuccess }: ContractCreationFo
                     </Select>
                   </div>
 
+                  <div className="space-y-2">
+                    <Label htmlFor="endereco_instalacao" className="text-gray-300 text-sm flex items-center gap-2">
+                      <MapPin className="h-4 w-4 text-orange-500" />
+                      Endereço de Instalação
+                    </Label>
+                    <Textarea
+                      id="endereco_instalacao"
+                      value={formData.endereco_instalacao}
+                      onChange={(e) => handleInputChange("endereco_instalacao", e.target.value)}
+                      placeholder="Digite o endereço onde o equipamento será instalado..."
+                      rows={3}
+                      className="bg-gray-700 border-gray-600 text-white placeholder:text-gray-500 resize-none"
+                    />
+                    <p className="text-xs text-gray-500">Local onde o equipamento será utilizado</p>
+                  </div>
+
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="data_inicio" className="text-gray-300 text-sm">
@@ -492,13 +510,13 @@ export function ContractCreationForm({ contract, onSuccess }: ContractCreationFo
 
                   <div className="space-y-2">
                     <Label htmlFor="observacoes" className="text-gray-300 text-sm">
-                      Observações adicionais sobre o contrato...
+                      Observações
                     </Label>
                     <Textarea
                       id="observacoes"
                       value={formData.observacoes}
                       onChange={(e) => handleInputChange("observacoes", e.target.value)}
-                      placeholder="Digite observações..."
+                      placeholder="Observações adicionais sobre o contrato..."
                       rows={4}
                       className="bg-gray-700 border-gray-600 text-white resize-none"
                     />

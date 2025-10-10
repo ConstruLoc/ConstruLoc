@@ -207,7 +207,7 @@ export function ClientForm({ client, onSuccess }: ClientFormProps) {
 
               <div className="space-y-2">
                 <Label htmlFor="email" className="flex items-center gap-2 text-slate-300">
-                  <Mail className="h-4 w-4 text-orange-600" />
+                  <Mail className="h-4 w-4 text-slate-400" />
                   Email
                 </Label>
                 <Input

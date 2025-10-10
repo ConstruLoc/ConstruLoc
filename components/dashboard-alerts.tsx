@@ -6,7 +6,7 @@ import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { useUser } from "@/contexts/user-context"
 import { Badge } from "@/components/ui/badge"
-import { Calendar, CheckCircle, AlertTriangle, Clock, XCircle } from "lucide-react"
+import { Calendar, CheckCircle, AlertTriangle, Clock, XCircle, Wrench, TrendingDown } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 import Link from "next/link"
 
@@ -18,6 +18,7 @@ interface Alert {
   count?: number
   icon: React.ReactNode
   contractId?: string
+  link?: string
 }
 
 interface ExpiringContract {
@@ -51,6 +52,22 @@ export function DashboardAlerts() {
         .eq("status", "disponivel")
 
       console.log("[v0] Available equipment count:", availableEquipment, "Error:", equipmentError)
+
+      const { count: maintenanceEquipment, error: maintenanceError } = await supabase
+        .from("equipamentos")
+        .select("*", { count: "exact", head: true })
+        .eq("status", "manutencao")
+
+      console.log("[v0] Maintenance equipment count:", maintenanceEquipment, "Error:", maintenanceError)
+
+      const { data: lowStockEquipment, error: lowStockError } = await supabase
+        .from("equipamentos")
+        .select("id, nome, quantidade")
+        .eq("status", "disponivel")
+        .lte("quantidade", 2)
+        .gt("quantidade", 0)
+
+      console.log("[v0] Low stock equipment:", lowStockEquipment, "Error:", lowStockError)
 
       const today = new Date()
       today.setHours(0, 0, 0, 0)
@@ -119,27 +136,27 @@ export function DashboardAlerts() {
           }
         })
 
-        // Create alerts for expired contracts
+        // Create alerts for expired contracts (devoluções atrasadas)
         if (expiredContracts.length > 0) {
           expiredContracts.forEach((contract) => {
             alertsList.push({
               id: `expired-${contract.id}`,
               type: "error",
-              title: `Contrato ${contract.numero_contrato} está atrasado!`,
-              description: `Venceu há ${Math.abs(contract.days_until_expiry)} dia(s) - ${contract.clienteNome}`,
+              title: `Devolução atrasada - ${contract.numero_contrato}`,
+              description: `Atrasado há ${Math.abs(contract.days_until_expiry)} dia(s) - ${contract.clienteNome}`,
               icon: <XCircle className="h-5 w-5" />,
               contractId: contract.id,
             })
           })
         }
 
-        // Create alerts for contracts expiring today
+        // Create alerts for contracts expiring today (devoluções hoje)
         if (expiringToday.length > 0) {
           expiringToday.forEach((contract) => {
             alertsList.push({
               id: `today-${contract.id}`,
               type: "error",
-              title: `Contrato ${contract.numero_contrato} vence HOJE!`,
+              title: `Devolução HOJE - ${contract.numero_contrato}`,
               description: `Cliente: ${contract.clienteNome}`,
               icon: <AlertTriangle className="h-5 w-5" />,
               contractId: contract.id,
@@ -147,14 +164,14 @@ export function DashboardAlerts() {
           })
         }
 
-        // Create alerts for contracts expiring in 1-2 days
+        // Create alerts for contracts expiring in 1-2 days (devoluções próximas)
         if (expiring1to2Days.length > 0) {
           expiring1to2Days.forEach((contract) => {
             alertsList.push({
               id: `urgent-${contract.id}`,
               type: "warning",
-              title: `Falta ${contract.days_until_expiry} dia(s) para vencer`,
-              description: `Contrato ${contract.numero_contrato} - ${contract.clienteNome}`,
+              title: `Devolução em ${contract.days_until_expiry} dia(s)`,
+              description: `${contract.numero_contrato} - ${contract.clienteNome}`,
               icon: <Clock className="h-5 w-5" />,
               contractId: contract.id,
             })
@@ -166,12 +183,38 @@ export function DashboardAlerts() {
           alertsList.push({
             id: "expiring-soon",
             type: "info",
-            title: `${expiring3to7Days.length} contrato(s) vencem esta semana`,
-            description: "Vence nos próximos 3-7 dias",
+            title: `${expiring3to7Days.length} devolução(ões) esta semana`,
+            description: "Devoluções previstas nos próximos 3-7 dias",
             count: expiring3to7Days.length,
             icon: <Calendar className="h-5 w-5" />,
+            link: "/contratos",
           })
         }
+      }
+
+      if (maintenanceEquipment && maintenanceEquipment > 0) {
+        alertsList.push({
+          id: "equipamentos-manutencao",
+          type: "warning",
+          title: `${maintenanceEquipment} equipamento(s) em manutenção`,
+          description: "Equipamentos indisponíveis temporariamente",
+          count: maintenanceEquipment,
+          icon: <Wrench className="h-5 w-5" />,
+          link: "/equipamentos",
+        })
+      }
+
+      if (lowStockEquipment && lowStockEquipment.length > 0) {
+        lowStockEquipment.forEach((equipment: any) => {
+          alertsList.push({
+            id: `low-stock-${equipment.id}`,
+            type: "warning",
+            title: `Estoque baixo: ${equipment.nome}`,
+            description: `Apenas ${equipment.quantidade} unidade(s) disponível(is)`,
+            icon: <TrendingDown className="h-5 w-5" />,
+            link: "/equipamentos",
+          })
+        })
       }
 
       // Add alert for available equipment
@@ -183,6 +226,7 @@ export function DashboardAlerts() {
           description: "Prontos para nova locação",
           count: availableEquipment,
           icon: <CheckCircle className="h-5 w-5" />,
+          link: "/equipamentos",
         })
       }
 
@@ -250,7 +294,7 @@ export function DashboardAlerts() {
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-white">
           <AlertTriangle className="h-5 w-5 text-orange-500" />
-          Alertas e Notificações
+          Alertas e Devoluções
           <div className="h-px flex-1 bg-gradient-to-r from-orange-500/50 to-transparent ml-3" />
         </CardTitle>
       </CardHeader>
@@ -270,7 +314,7 @@ export function DashboardAlerts() {
             alerts.map((alert) => {
               const AlertContent = (
                 <div
-                  className={`p-4 rounded-lg border ${getAlertStyles(alert.type)} transition-all hover:scale-[1.02]`}
+                  className={`p-4 rounded-lg border ${getAlertStyles(alert.type)} transition-all hover:scale-[1.02] ${alert.contractId || alert.link ? "cursor-pointer" : ""}`}
                 >
                   <div className="flex items-start gap-3">
                     <span className={`mt-0.5 ${getAlertTextColor(alert.type)}`}>{alert.icon}</span>
@@ -294,6 +338,15 @@ export function DashboardAlerts() {
               if (alert.contractId) {
                 return (
                   <Link key={alert.id} href={`/contratos/${alert.contractId}`}>
+                    {AlertContent}
+                  </Link>
+                )
+              }
+
+              // If there is a link, make the alert clickable
+              if (alert.link) {
+                return (
+                  <Link key={alert.id} href={alert.link}>
                     {AlertContent}
                   </Link>
                 )

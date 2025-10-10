@@ -65,6 +65,10 @@ export function EquipmentForm({ equipment, categories, onSuccess }: EquipmentFor
     setError(null)
 
     try {
+      if (!formData.categoria_id || formData.categoria_id.trim() === "") {
+        throw new Error("Por favor, selecione uma categoria")
+      }
+
       let imageUrl = equipment?.imagem_url
       if (selectedFile) {
         setUploadingImage(true)
@@ -98,7 +102,7 @@ export function EquipmentForm({ equipment, categories, onSuccess }: EquipmentFor
         descricao: formData.descricao,
         numero_serie: formData.numero_serie,
         valor_diario: Number.parseFloat(formData.valor_diario.toString()),
-        categoria_id: formData.categoria_id,
+        categoria_id: formData.categoria_id.trim(),
         status: formData.status,
         quantidade: Number.parseInt(formData.quantidade.toString()) || 1,
         valor_semanal: null,
@@ -148,7 +152,7 @@ export function EquipmentForm({ equipment, categories, onSuccess }: EquipmentFor
         onSuccess()
       }
     } catch (error: any) {
-      console.error("[v0] Equipment form submission error:", error)
+      console.error("[v0] Equipment form submission error:", error.message)
       if (error.message?.includes("duplicate key value violates unique constraint")) {
         if (error.message.includes("numero_serie")) {
           setError("Já existe um equipamento com este número de série")
