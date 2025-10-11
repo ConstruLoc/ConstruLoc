@@ -27,7 +27,8 @@ INSERT INTO public.produtos_catalogo (nome, descricao, categoria, preco_diario, 
 ('Guindaste Móvel 25T', 'Guindaste móvel para elevação de cargas pesadas', 'Guindastes', 800.00, 4800.00, 19200.00, ARRAY['25 toneladas', 'Altura 30m', 'Lança telescópica'], true, true),
 ('Compactador de Solo Vibratorio', 'Compactador para preparação de terrenos', 'Compactadores', 200.00, 1200.00, 4800.00, ARRAY['1.5 toneladas', 'Vibração dupla', 'Motor diesel'], true, false),
 ('Retroescavadeira JCB 3CX', 'Máquina versátil para escavação e carregamento', 'Retroescavadeiras', 380.00, 2280.00, 9120.00, ARRAY['8 toneladas', 'Motor 109HP', 'Tração 4x4'], true, true),
-('Martelo Pneumático', 'Martelo para demolição e quebra de concreto', 'Ferramentas', 80.00, 480.00, 1920.00, ARRAY['Peso 25kg', 'Pressão 7 bar', 'Ponteiros inclusos'], true, false);
+('Martelo Pneumático', 'Martelo para demolição e quebra de concreto', 'Ferramentas', 80.00, 480.00, 1920.00, ARRAY['Peso 25kg', 'Pressão 7 bar', 'Ponteiros inclusos'], true, false)
+ON CONFLICT DO NOTHING;
 
 -- Função para atualizar updated_at automaticamente
 CREATE OR REPLACE FUNCTION update_updated_at_column()
@@ -37,6 +38,9 @@ BEGIN
     RETURN NEW;
 END;
 $$ language 'plpgsql';
+
+-- Adicionar DROP TRIGGER IF EXISTS para evitar erro "trigger already exists"
+DROP TRIGGER IF EXISTS update_produtos_catalogo_updated_at ON public.produtos_catalogo;
 
 -- Trigger para atualizar updated_at
 CREATE TRIGGER update_produtos_catalogo_updated_at 

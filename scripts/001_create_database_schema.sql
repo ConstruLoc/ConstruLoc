@@ -4,11 +4,25 @@
 -- Enable UUID extension
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
--- Create enum types
-CREATE TYPE equipment_status AS ENUM ('disponivel', 'locado', 'manutencao', 'inativo');
-CREATE TYPE contract_status AS ENUM ('ativo', 'finalizado', 'cancelado', 'pendente');
-CREATE TYPE payment_status AS ENUM ('pendente', 'pago', 'atrasado', 'cancelado');
-CREATE TYPE user_role AS ENUM ('admin', 'operador', 'cliente');
+-- Criar tipos ENUM apenas se não existirem, sem usar DROP CASCADE que remove colunas
+DO $$ 
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'equipment_status') THEN
+        CREATE TYPE equipment_status AS ENUM ('disponivel', 'locado', 'manutencao', 'inativo');
+    END IF;
+    
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'contract_status') THEN
+        CREATE TYPE contract_status AS ENUM ('ativo', 'finalizado', 'cancelado', 'pendente');
+    END IF;
+    
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'payment_status') THEN
+        CREATE TYPE payment_status AS ENUM ('pendente', 'pago', 'atrasado', 'cancelado');
+    END IF;
+    
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'user_role') THEN
+        CREATE TYPE user_role AS ENUM ('admin', 'operador', 'cliente');
+    END IF;
+END $$;
 
 -- Profiles table (extends auth.users)
 CREATE TABLE IF NOT EXISTS public.profiles (
@@ -241,12 +255,12 @@ CREATE POLICY "Admin can manage settings" ON public.configuracoes FOR ALL USING 
 );
 
 -- Create indexes for better performance
-CREATE INDEX idx_equipamentos_status ON public.equipamentos(status);
-CREATE INDEX idx_equipamentos_categoria ON public.equipamentos(categoria_id);
-CREATE INDEX idx_contratos_cliente ON public.contratos(cliente_id);
-CREATE INDEX idx_contratos_status ON public.contratos(status);
-CREATE INDEX idx_contratos_data_inicio ON public.contratos(data_inicio);
-CREATE INDEX idx_pagamentos_contrato ON public.pagamentos(contrato_id);
-CREATE INDEX idx_pagamentos_status ON public.pagamentos(status);
-CREATE INDEX idx_itens_contrato_equipamento ON public.itens_contrato(equipamento_id);
-CREATE INDEX idx_manutencoes_equipamento ON public.manutencoes(equipamento_id);
+CREATE INDEX IF NOT EXISTS idx_equipamentos_status ON public.equipamentos(status);
+CREATE INDEX IF NOT EXISTS idx_equipamentos_categoria ON public.equipamentos(categoria_id);
+CREATE INDEX IF NOT EXISTS idx_contratos_cliente ON public.contratos(cliente_id);
+CREATE INDEX IF NOT EXISTS idx_contratos_status ON public.contratos(status);
+CREATE INDEX IF NOT EXISTS idx_contratos_data_inicio ON public.contratos(data_inicio);
+CREATE INDEX IF NOT EXISTS idx_pagamentos_contrato ON public.pagamentos(contrato_id);
+CREATE INDEX IF NOT EXISTS idx_pagamentos_status ON public.pagamentos(status);
+CREATE INDEX IF NOT EXISTS idx_itens_contrato_equipamento ON public.itens_contrato(equipamento_id);
+CREATE INDEX IF NOT EXISTS idx_manutencoes_equipamento ON public.manutencoes(equipamento_id);

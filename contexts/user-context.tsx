@@ -1,7 +1,6 @@
 "use client"
 
 import { createContext, useContext, useState, useEffect, type ReactNode } from "react"
-import { createClient } from "@/lib/supabase/client"
 
 interface User {
   id: string
@@ -33,138 +32,62 @@ interface UserContextType {
 
 const UserContext = createContext<UserContextType | undefined>(undefined)
 
+const DEFAULT_PROFILE: Profile = {
+  id: "admin-default",
+  nome: "Administrador",
+  email: "admin@construloc.com",
+  empresa: "ConstruLoc",
+  role: "admin",
+  created_at: new Date().toISOString(),
+  updated_at: new Date().toISOString(),
+}
+
 export function UserProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null)
-  const [profile, setProfile] = useState<Profile | null>(null)
-  const [loading, setLoading] = useState(true)
+  const [user, setUser] = useState<User>({ id: DEFAULT_PROFILE.id, email: DEFAULT_PROFILE.email })
+  const [profile, setProfile] = useState<Profile>(DEFAULT_PROFILE)
+  const [loading, setLoading] = useState(false)
   const [supabaseError, setSupabaseError] = useState<string | null>(null)
-  const supabase = createClient()
 
   useEffect(() => {
-    fetchUser()
+    const savedProfile = localStorage.getItem("construloc_profile")
+    if (savedProfile) {
+      try {
+        const parsed = JSON.parse(savedProfile)
+        setProfile(parsed)
+        setUser({ id: parsed.id, email: parsed.email })
+      } catch (error) {
+        console.error("[v0] Error parsing saved profile:", error)
+        // Usa o perfil padrão se houver erro
+        localStorage.setItem("construloc_profile", JSON.stringify(DEFAULT_PROFILE))
+      }
+    } else {
+      // Salva o perfil padrão no localStorage
+      localStorage.setItem("construloc_profile", JSON.stringify(DEFAULT_PROFILE))
+    }
   }, [])
 
-  const fetchUser = async () => {
-    try {
-      setLoading(true)
-
-      // Tenta buscar o ID do perfil do localStorage
-      let profileId = localStorage.getItem("construloc_profile_id")
-
-      if (profileId) {
-        try {
-          // Busca o perfil existente
-          const { data: profileData, error: profileError } = await supabase
-            .from("profiles")
-            .select("*")
-            .eq("id", profileId)
-            .single()
-
-          if (profileError) {
-            console.error("Error fetching profile:", profileError)
-            // Se o perfil não existe mais, remove do localStorage
-            localStorage.removeItem("construloc_profile_id")
-            profileId = null
-          } else if (profileData) {
-            setProfile(profileData)
-            setUser({ id: profileData.id, email: profileData.email })
-            setLoading(false)
-            return
-          }
-        } catch (fetchError) {
-          console.error("Error fetching profile:", fetchError)
-          localStorage.removeItem("construloc_profile_id")
-          profileId = null
-        }
-      }
-
-      try {
-        const { data: existingProfiles, error: fetchError } = await supabase
-          .from("profiles")
-          .select("*")
-          .limit(1)
-          .single()
-
-        if (fetchError && fetchError.code !== "PGRST116") {
-          console.error("Error fetching profiles:", fetchError)
-        }
-
-        if (existingProfiles) {
-          // Usa o primeiro perfil encontrado
-          setProfile(existingProfiles)
-          setUser({ id: existingProfiles.id, email: existingProfiles.email })
-          localStorage.setItem("construloc_profile_id", existingProfiles.id)
-          setLoading(false)
-          return
-        }
-      } catch (fetchError) {
-        console.error("Error fetching existing profiles:", fetchError)
-      }
-
-      try {
-        const newProfile = {
-          email: "admin@construloc.com",
-          nome: "Administrador",
-          empresa: "ConstruLoc",
-          role: "admin" as const,
-        }
-
-        const { data: createdProfile, error: createError } = await supabase
-          .from("profiles")
-          .insert(newProfile)
-          .select()
-          .single()
-
-        if (createError) {
-          console.error("Error creating profile:", createError)
-          setSupabaseError(createError.message)
-        } else if (createdProfile) {
-          setProfile(createdProfile)
-          setUser({ id: createdProfile.id, email: createdProfile.email })
-          localStorage.setItem("construloc_profile_id", createdProfile.id)
-        }
-      } catch (createError: any) {
-        console.error("Error creating new profile:", createError)
-        setSupabaseError(createError.message)
-      }
-    } catch (error: any) {
-      console.error("Error in fetchUser:", error)
-      setSupabaseError(error.message)
-      setProfile({
-        id: "default",
-        nome: "Administrador",
-        email: "admin@construloc.com",
-        role: "admin",
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      })
-      setUser({ id: "default", email: "admin@construloc.com" })
-    } finally {
-      setLoading(false)
-    }
-  }
-
   const refreshProfile = async () => {
-    await fetchUser()
+    const savedProfile = localStorage.getItem("construloc_profile")
+    if (savedProfile) {
+      try {
+        const parsed = JSON.parse(savedProfile)
+        setProfile(parsed)
+        setUser({ id: parsed.id, email: parsed.email })
+      } catch (error) {
+        console.error("[v0] Error refreshing profile:", error)
+      }
+    }
   }
 
   const updateProfile = async (updates: Partial<Profile>) => {
-    if (!profile) {
-      throw new Error("No profile loaded")
+    const updatedProfile = {
+      ...profile,
+      ...updates,
+      updated_at: new Date().toISOString(),
     }
-
-    try {
-      const { data, error } = await supabase.from("profiles").update(updates).eq("id", profile.id).select().single()
-
-      if (error) {
-        throw error
-      }
-
-      setProfile(data)
-    } catch (error: any) {
-      console.error("Error updating profile:", error)
-      throw error
-    }
+    setProfile(updatedProfile)
+    setUser({ id: updatedProfile.id, email: updatedProfile.email })
+    localStorage.setItem("construloc_profile", JSON.stringify(updatedProfile))
   }
 
   return (

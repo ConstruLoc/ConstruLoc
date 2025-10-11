@@ -128,7 +128,7 @@ export function ClientForm({ client, onSuccess }: ClientFormProps) {
       const clientData = {
         ...formData,
         email: formData.email.trim() || null, // Send null if email is empty
-        documento: formData.documento.replace(/\D/g, ""), // Store only numbers
+        documento: formData.documento.trim() ? formData.documento.replace(/\D/g, "") : null, // Send null if documento is empty to allow multiple clients without document
         telefone: formData.telefone.replace(/\D/g, ""), // Store only numbers
         cep: formData.cep.replace(/\D/g, ""), // Store only numbers
       }
@@ -240,9 +240,8 @@ export function ClientForm({ client, onSuccess }: ClientFormProps) {
 
               <div className="space-y-2">
                 <Label htmlFor="tipo_documento" className="flex items-center gap-2 text-slate-300">
-                  <FileText className="h-4 w-4 text-orange-600" />
+                  <FileText className="h-4 w-4 text-slate-400" />
                   Tipo de Documento
-                  <span className="text-orange-600">*</span>
                 </Label>
                 <Select
                   value={formData.tipo_documento}
@@ -263,7 +262,7 @@ export function ClientForm({ client, onSuccess }: ClientFormProps) {
 
               <div className="space-y-2">
                 <Label htmlFor="documento" className="flex items-center gap-2 text-slate-300">
-                  <FileText className="h-4 w-4 text-orange-600" />
+                  <FileText className="h-4 w-4 text-slate-400" />
                   {formData.tipo_documento}
                 </Label>
                 <Input
