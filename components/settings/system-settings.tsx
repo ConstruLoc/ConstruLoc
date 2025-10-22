@@ -22,6 +22,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import { sendPushNotification, startNotificationScheduler } from "@/lib/notifications"
 
 export function SystemSettings() {
   const [settings, setSettings] = useState({
@@ -30,7 +31,6 @@ export function SystemSettings() {
     company_phone: "(11) 99999-9999",
     company_address: "Rua das Construções, 123 - São Paulo, SP",
     notifications_email: true,
-    notifications_sms: false,
     notifications_push: false,
     auto_backup: true,
     contract_template: "Modelo padrão de contrato de locação...",
@@ -41,6 +41,7 @@ export function SystemSettings() {
   const [resetDialogOpen, setResetDialogOpen] = useState(false)
   const [isResetting, setIsResetting] = useState(false)
   const [isExporting, setIsExporting] = useState(false)
+  const [isTesting, setIsTesting] = useState(false)
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null)
   const [isInstallable, setIsInstallable] = useState(false)
 
@@ -51,6 +52,19 @@ export function SystemSettings() {
     if ("Notification" in window && "serviceWorker" in navigator) {
       setPushSupported(true)
       setPushPermission(Notification.permission)
+    }
+
+    const savedSettings = localStorage.getItem("system_settings")
+    if (savedSettings) {
+      setSettings(JSON.parse(savedSettings))
+    }
+
+    const checkSettings = localStorage.getItem("system_settings")
+    if (checkSettings) {
+      const parsed = JSON.parse(checkSettings)
+      if (parsed.notifications_push) {
+        startNotificationScheduler()
+      }
     }
   }, [])
 
@@ -74,7 +88,11 @@ export function SystemSettings() {
 
   const requestPushPermission = async () => {
     if (!pushSupported) {
-      alert("Notificações push não são suportadas neste navegador")
+      toast({
+        title: "Não suportado",
+        description: "Notificações push não são suportadas neste navegador",
+        variant: "destructive",
+      })
       return
     }
 
@@ -85,18 +103,65 @@ export function SystemSettings() {
       if (permission === "granted") {
         handleInputChange("notifications_push", true)
 
-        new Notification("ConstruLoc", {
-          body: "Notificações ativadas com sucesso! Você receberá alertas sobre contratos e pagamentos.",
-          icon: "/logo.png",
-          badge: "/logo.png",
+        await sendPushNotification({
+          title: "Notificações Ativadas!",
+          body: "Você receberá alertas sobre contratos e pagamentos próximos do vencimento.",
+          url: "/dashboard",
         })
+
+        toast({
+          title: "Notificações ativadas!",
+          description: "Você receberá alertas 5 dias antes dos pagamentos.",
+        })
+
+        startNotificationScheduler()
       } else {
         handleInputChange("notifications_push", false)
-        alert("Permissão de notificações negada. Você pode ativar nas configurações do navegador.")
+        toast({
+          title: "Permissão negada",
+          description: "Você pode ativar nas configurações do navegador.",
+          variant: "destructive",
+        })
       }
     } catch (error) {
       console.error("Error requesting push permission:", error)
-      alert("Erro ao solicitar permissão de notificações")
+      toast({
+        title: "Erro",
+        description: "Erro ao solicitar permissão de notificações",
+        variant: "destructive",
+      })
+    }
+  }
+
+  const testNotification = async () => {
+    setIsTesting(true)
+    try {
+      const success = await sendPushNotification({
+        title: "🔔 Teste de Notificação",
+        body: "Se você está vendo isso, as notificações estão funcionando perfeitamente!",
+        url: "/dashboard",
+      })
+
+      if (success) {
+        toast({
+          title: "Notificação enviada!",
+          description: "Verifique se a notificação apareceu no seu dispositivo.",
+        })
+      } else {
+        toast({
+          title: "Erro ao enviar",
+          description: "Não foi possível enviar a notificação. Verifique as permissões.",
+          variant: "destructive",
+        })
+      }
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description: "Ocorreu um erro ao testar a notificação.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsTesting(false)
     }
   }
 
@@ -215,8 +280,11 @@ export function SystemSettings() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    console.log("Saving settings:", settings)
-    alert("Configurações salvas com sucesso!")
+    localStorage.setItem("system_settings", JSON.stringify(settings))
+    toast({
+      title: "Configurações salvas!",
+      description: "Suas preferências foram atualizadas com sucesso.",
+    })
   }
 
   return (
@@ -274,7 +342,7 @@ export function SystemSettings() {
       <Card>
         <CardHeader>
           <CardTitle>Notificações</CardTitle>
-          <CardDescription>Configure como você deseja receber notificações</CardDescription>
+          <CardDescription>Configure como você deseja receber alertas sobre pagamentos</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex items-center justify-between">
@@ -289,58 +357,85 @@ export function SystemSettings() {
             />
           </div>
 
-          <div className="flex items-center justify-between">
-            <div>
-              <Label htmlFor="notifications_sms">Notificações por SMS</Label>
-              <p className="text-sm text-gray-500">Receba alertas urgentes por mensagem</p>
-            </div>
-            <Switch
-              id="notifications_sms"
-              checked={settings.notifications_sms}
-              onCheckedChange={(checked) => handleInputChange("notifications_sms", checked)}
-            />
-          </div>
-
           <div className="border-t pt-4">
-            <div className="flex items-center justify-between">
-              <div className="flex-1">
-                <div className="flex items-center gap-2">
-                  <Label htmlFor="notifications_push">Notificações Push no Navegador</Label>
-                  {pushPermission === "granted" ? (
-                    <Bell className="h-4 w-4 text-green-500" />
-                  ) : (
-                    <BellOff className="h-4 w-4 text-gray-400" />
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2">
+                    <Label htmlFor="notifications_push">Notificações Push (Celular e Computador)</Label>
+                    {pushPermission === "granted" ? (
+                      <Bell className="h-4 w-4 text-green-500" />
+                    ) : (
+                      <BellOff className="h-4 w-4 text-gray-400" />
+                    )}
+                  </div>
+                  <p className="text-sm text-gray-500">
+                    Receba alertas 5 dias antes dos pagamentos, mesmo com o app fechado
+                  </p>
+                  {!pushSupported && (
+                    <p className="text-sm text-red-500 mt-1">Notificações push não são suportadas neste navegador</p>
+                  )}
+                  {pushPermission === "denied" && (
+                    <p className="text-sm text-orange-500 mt-1">
+                      Permissão negada. Ative nas configurações do navegador.
+                    </p>
+                  )}
+                  {pushPermission === "granted" && (
+                    <p className="text-sm text-green-500 mt-1">
+                      Notificações ativadas! Funciona no celular e computador.
+                    </p>
                   )}
                 </div>
-                <p className="text-sm text-gray-500">
-                  Receba notificações no celular e computador mesmo quando o site estiver fechado
-                </p>
-                {!pushSupported && (
-                  <p className="text-sm text-red-500 mt-1">Notificações push não são suportadas neste navegador</p>
-                )}
-                {pushPermission === "denied" && (
-                  <p className="text-sm text-orange-500 mt-1">
-                    Permissão negada. Ative nas configurações do navegador.
-                  </p>
+                {pushPermission === "granted" ? (
+                  <div className="flex gap-2">
+                    <Button
+                      type="button"
+                      onClick={testNotification}
+                      variant="outline"
+                      size="sm"
+                      disabled={isTesting}
+                      className="bg-orange-600 hover:bg-orange-700 text-white border-orange-500"
+                    >
+                      {isTesting ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Enviando...
+                        </>
+                      ) : (
+                        <>
+                          <Bell className="mr-2 h-4 w-4" />
+                          Testar Notificação
+                        </>
+                      )}
+                    </Button>
+                    <Switch
+                      id="notifications_push"
+                      checked={settings.notifications_push}
+                      onCheckedChange={(checked) => handleInputChange("notifications_push", checked)}
+                    />
+                  </div>
+                ) : (
+                  <Button
+                    type="button"
+                    onClick={requestPushPermission}
+                    disabled={!pushSupported || pushPermission === "denied"}
+                    variant="outline"
+                    size="sm"
+                  >
+                    Ativar Notificações
+                  </Button>
                 )}
               </div>
-              {pushPermission === "granted" ? (
-                <Switch
-                  id="notifications_push"
-                  checked={settings.notifications_push}
-                  onCheckedChange={(checked) => handleInputChange("notifications_push", checked)}
-                />
-              ) : (
-                <Button
-                  type="button"
-                  onClick={requestPushPermission}
-                  disabled={!pushSupported || pushPermission === "denied"}
-                  variant="outline"
-                  size="sm"
-                >
-                  Ativar
-                </Button>
-              )}
+
+              <div className="rounded-lg bg-orange-500/10 border border-orange-500/30 p-4">
+                <p className="text-sm text-orange-200">
+                  <strong>Dica:</strong> Adicione o ConstruLoc à tela inicial do seu celular para receber notificações
+                  como um app nativo! As notificações funcionam mesmo com o app fechado.
+                  {pushPermission === "granted" && (
+                    <> Use o botão "Testar Notificação" para verificar se está funcionando corretamente.</>
+                  )}
+                </p>
+              </div>
             </div>
           </div>
 

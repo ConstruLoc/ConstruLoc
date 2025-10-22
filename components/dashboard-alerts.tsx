@@ -299,7 +299,7 @@ export function DashboardAlerts() {
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="space-y-3">
+        <div className="space-y-3 max-h-[480px] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-slate-600 scrollbar-track-slate-800">
           {alerts.length === 0 ? (
             <div className="p-4 rounded-lg border border-slate-600 bg-slate-700/50">
               <div className="flex items-center gap-3">

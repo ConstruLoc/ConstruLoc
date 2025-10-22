@@ -81,3 +81,64 @@ self.addEventListener("fetch", (event) => {
       }),
   )
 })
+
+self.addEventListener("push", (event) => {
+  console.log("[SW] Push notification received:", event)
+
+  const data = event.data ? event.data.json() : {}
+  const title = data.title || "ConstruLoc"
+  const options = {
+    body: data.body || "Você tem uma nova notificação",
+    icon: data.icon || "/logo.png",
+    badge: "/logo.png",
+    vibrate: [200, 100, 200],
+    data: {
+      url: data.url || "/dashboard",
+      dateOfArrival: Date.now(),
+    },
+    actions: [
+      {
+        action: "open",
+        title: "Abrir",
+      },
+      {
+        action: "close",
+        title: "Fechar",
+      },
+    ],
+  }
+
+  event.waitUntil(self.registration.showNotification(title, options))
+})
+
+self.addEventListener("notificationclick", (event) => {
+  console.log("[SW] Notification clicked:", event)
+
+  event.notification.close()
+
+  if (event.action === "close") {
+    return
+  }
+
+  const urlToOpen = event.notification.data?.url || "/dashboard"
+
+  event.waitUntil(
+    clients
+      .matchAll({
+        type: "window",
+        includeUncontrolled: true,
+      })
+      .then((clientList) => {
+        // Se já existe uma janela aberta, foca nela
+        for (const client of clientList) {
+          if (client.url.includes(urlToOpen) && "focus" in client) {
+            return client.focus()
+          }
+        }
+        // Caso contrário, abre uma nova janela
+        if (clients.openWindow) {
+          return clients.openWindow(urlToOpen)
+        }
+      }),
+  )
+})

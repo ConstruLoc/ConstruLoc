@@ -6,6 +6,7 @@ import { ThemeProvider as NextThemeProvider } from "@/components/theme-provider"
 import { ThemeProvider } from "@/contexts/theme-context"
 import { UserProvider } from "@/contexts/user-context"
 import { Toaster } from "@/components/ui/toaster"
+import { NotificationScheduler } from "@/components/notification-scheduler"
 import "./globals.css"
 
 const inter = Inter({
@@ -54,6 +55,7 @@ export default function RootLayout({
         <NextThemeProvider attribute="class" defaultTheme="dark" enableSystem={false} disableTransitionOnChange={false}>
           <ThemeProvider>
             <UserProvider>
+              <NotificationScheduler />
               <Suspense fallback={null}>{children}</Suspense>
               <Toaster />
             </UserProvider>

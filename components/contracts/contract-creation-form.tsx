@@ -10,7 +10,18 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useRouter } from "next/navigation"
-import { Loader2, Search, Package, X, CheckCircle2, AlertCircle, XCircle, MapPin } from "lucide-react"
+import {
+  Loader2,
+  Search,
+  Package,
+  X,
+  CheckCircle2,
+  AlertCircle,
+  XCircle,
+  MapPin,
+  DollarSign,
+  Calendar,
+} from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import Image from "next/image"
 
@@ -56,6 +67,7 @@ export function ContractCreationForm({ contract, onSuccess }: ContractCreationFo
     cliente_id: contract?.cliente_id || "",
     data_inicio: contract?.data_inicio || "",
     data_fim: contract?.data_fim || "",
+    data_pagamento: contract?.data_pagamento || "",
     status: contract?.status || "pendente",
     status_pagamento: "pendente",
     observacoes: contract?.observacoes || "",
@@ -132,7 +144,7 @@ export function ContractCreationForm({ contract, onSuccess }: ContractCreationFo
     setFilteredEquipments(filtered)
   }
 
-  const handleInputChange = (field: string, value: string) => {
+  const handleInputChange = (field: string, value: string | number) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
   }
 
@@ -146,8 +158,8 @@ export function ContractCreationForm({ contract, onSuccess }: ContractCreationFo
         equipamento_id: equipment.id,
         equipamento: equipment,
         quantidade: 1,
-        valor_unitario: equipment.valor_diario,
-        valor_total: equipment.valor_diario,
+        valor_unitario: equipment.valor_mensal || equipment.valor_diario * 30,
+        valor_total: equipment.valor_mensal || equipment.valor_diario * 30,
       }
       setItems((prev) => [...prev, newItem])
     }
@@ -158,10 +170,12 @@ export function ContractCreationForm({ contract, onSuccess }: ContractCreationFo
       prev.map((item) => {
         if (item.equipamento_id === equipmentId) {
           const quantity = Math.max(1, Math.min(newQuantity, item.equipamento?.stock_count || 1))
+          const monthlyValue = item.equipamento?.valor_mensal || item.valor_unitario
           return {
             ...item,
             quantidade: quantity,
-            valor_total: item.valor_unitario * quantity,
+            valor_unitario: monthlyValue,
+            valor_total: monthlyValue * quantity,
           }
         }
         return item
@@ -291,6 +305,7 @@ export function ContractCreationForm({ contract, onSuccess }: ContractCreationFo
         cliente_id: formData.cliente_id,
         data_inicio: formData.data_inicio,
         data_fim: formData.data_fim,
+        data_pagamento: formData.data_pagamento,
         status: formData.status,
         observacoes: formData.observacoes,
         endereco_instalacao: formData.endereco_instalacao,
@@ -338,7 +353,7 @@ export function ContractCreationForm({ contract, onSuccess }: ContractCreationFo
         const paymentData = {
           contrato_id: contractId,
           valor: calculateTotal(),
-          data_vencimento: formData.data_fim,
+          data_vencimento: formData.data_pagamento,
           status: formData.status_pagamento,
           forma_pagamento: "A definir",
         }
@@ -354,8 +369,8 @@ export function ContractCreationForm({ contract, onSuccess }: ContractCreationFo
         contrato_id: contractId,
         equipamento_id: item.equipamento_id,
         quantidade: item.quantidade,
-        valor_unitario: item.valor_unitario,
-        valor_total: item.valor_total,
+        valor_unitario: item.valor_unitario, // This is now the monthly unit price
+        valor_total: item.valor_total, // This is the total for this item over the contract duration
       }))
 
       const { error: itemsError } = await supabase.from("itens_contrato").insert(itemsData)
@@ -386,30 +401,32 @@ export function ContractCreationForm({ contract, onSuccess }: ContractCreationFo
   }
 
   return (
-    <form onSubmit={handleSubmit} className="min-h-screen bg-gray-900 p-6">
+    <form onSubmit={handleSubmit} className="min-h-screen bg-gray-900 p-4 md:p-6">
       <div className="max-w-7xl mx-auto">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
           {/* Left Column - Contract Information */}
-          <div className="space-y-6">
+          <div className="space-y-4 md:space-y-6">
             <Card className="bg-gray-800 border-gray-700">
-              <CardContent className="p-6">
-                <h2 className="text-orange-500 text-lg font-semibold mb-6">Informações do Contrato</h2>
+              <CardContent className="p-4 md:p-6">
+                <h2 className="text-orange-500 text-xl md:text-lg font-semibold mb-4 md:mb-6">
+                  Informações do Contrato
+                </h2>
 
-                <div className="space-y-4">
+                <div className="space-y-5 md:space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="cliente" className="text-gray-300 text-sm">
+                    <Label htmlFor="cliente" className="text-gray-300 text-base md:text-sm">
                       Cliente
                     </Label>
                     <Select
                       value={formData.cliente_id}
                       onValueChange={(value) => handleInputChange("cliente_id", value)}
                     >
-                      <SelectTrigger className="bg-gray-700 border-gray-600 text-white h-11">
+                      <SelectTrigger className="bg-gray-700 border-gray-600 text-white h-12 md:h-11 text-base">
                         <SelectValue placeholder="Selecione um cliente" />
                       </SelectTrigger>
                       <SelectContent>
                         {clients.map((client) => (
-                          <SelectItem key={client.id} value={client.id}>
+                          <SelectItem key={client.id} value={client.id} className="text-base">
                             {client.nome}
                           </SelectItem>
                         ))}
@@ -418,8 +435,11 @@ export function ContractCreationForm({ contract, onSuccess }: ContractCreationFo
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="endereco_instalacao" className="text-gray-300 text-sm flex items-center gap-2">
-                      <MapPin className="h-4 w-4 text-orange-500" />
+                    <Label
+                      htmlFor="endereco_instalacao"
+                      className="text-gray-300 text-base md:text-sm flex items-center gap-2"
+                    >
+                      <MapPin className="h-5 w-5 md:h-4 md:w-4 text-orange-500" />
                       Endereço de Instalação
                     </Label>
                     <Textarea
@@ -428,88 +448,116 @@ export function ContractCreationForm({ contract, onSuccess }: ContractCreationFo
                       onChange={(e) => handleInputChange("endereco_instalacao", e.target.value)}
                       placeholder="Digite o endereço onde o equipamento será instalado..."
                       rows={3}
-                      className="bg-gray-700 border-gray-600 text-white placeholder:text-gray-500 resize-none"
+                      className="bg-gray-700 border-gray-600 text-white placeholder:text-gray-500 resize-none text-base"
                     />
-                    <p className="text-xs text-gray-500">Local onde o equipamento será utilizado</p>
+                    <p className="text-sm md:text-xs text-gray-500">Local onde o equipamento será utilizado</p>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="data_inicio" className="text-gray-300 text-sm">
-                        Data de Início
-                      </Label>
-                      <Input
-                        id="data_inicio"
-                        type="date"
-                        value={formData.data_inicio}
-                        onChange={(e) => handleInputChange("data_inicio", e.target.value)}
-                        className="bg-gray-700 border-gray-600 text-white h-11"
-                        required
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="data_fim" className="text-gray-300 text-sm">
-                        Data de Fim
-                      </Label>
-                      <Input
-                        id="data_fim"
-                        type="date"
-                        value={formData.data_fim}
-                        onChange={(e) => handleInputChange("data_fim", e.target.value)}
-                        className="bg-gray-700 border-gray-600 text-white h-11"
-                        required
-                      />
-                    </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="data_inicio" className="text-gray-300 text-base md:text-sm flex items-center gap-2">
+                      <Calendar className="h-5 w-5 md:h-4 md:w-4 text-orange-500" />
+                      Data de Início
+                    </Label>
+                    <Input
+                      id="data_inicio"
+                      type="date"
+                      value={formData.data_inicio}
+                      onChange={(e) => handleInputChange("data_inicio", e.target.value)}
+                      className="bg-gray-700 border-gray-600 text-white h-12 md:h-11 text-base"
+                      required
+                    />
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="data_fim" className="text-gray-300 text-base md:text-sm flex items-center gap-2">
+                      <Calendar className="h-5 w-5 md:h-4 md:w-4 text-orange-500" />
+                      Data de Fim
+                    </Label>
+                    <Input
+                      id="data_fim"
+                      type="date"
+                      value={formData.data_fim}
+                      onChange={(e) => handleInputChange("data_fim", e.target.value)}
+                      className="bg-gray-700 border-gray-600 text-white h-12 md:h-11 text-base"
+                      required
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label
+                      htmlFor="data_pagamento"
+                      className="text-gray-300 text-base md:text-sm flex items-center gap-2"
+                    >
+                      <DollarSign className="h-5 w-5 md:h-4 md:w-4 text-orange-500" />
+                      Data de Pagamento
+                    </Label>
+                    <Input
+                      id="data_pagamento"
+                      type="date"
+                      value={formData.data_pagamento}
+                      onChange={(e) => handleInputChange("data_pagamento", e.target.value)}
+                      className="bg-gray-700 border-gray-600 text-white h-12 md:h-11 text-base"
+                    />
+                    <p className="text-sm md:text-xs text-gray-500">Notificação será enviada 5 dias antes desta data</p>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label className="text-gray-300 text-sm">Status do Contrato</Label>
+                      <Label className="text-gray-300 text-base md:text-sm">Status do Contrato</Label>
                       <Select value={formData.status} onValueChange={(value) => handleInputChange("status", value)}>
-                        <SelectTrigger className="bg-gray-700 border-gray-600 text-white h-11">
+                        <SelectTrigger className="bg-gray-700 border-gray-600 text-white h-12 md:h-11 text-base">
                           <SelectValue placeholder="Selecione" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="pendente">Pendente</SelectItem>
-                          <SelectItem value="ativo">Ativo</SelectItem>
-                          <SelectItem value="finalizado">Finalizado</SelectItem>
-                          <SelectItem value="cancelado">Cancelado</SelectItem>
+                          <SelectItem value="pendente" className="text-base">
+                            Pendente
+                          </SelectItem>
+                          <SelectItem value="ativo" className="text-base">
+                            Ativo
+                          </SelectItem>
+                          <SelectItem value="finalizado" className="text-base">
+                            Finalizado
+                          </SelectItem>
+                          <SelectItem value="cancelado" className="text-base">
+                            Cancelado
+                          </SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
 
                     <div className="space-y-2">
-                      <Label className="text-gray-300 text-sm">Status de Pagamento</Label>
+                      <Label className="text-gray-300 text-base md:text-sm">Status de Pagamento</Label>
                       <Select
                         value={formData.status_pagamento}
                         onValueChange={(value) => handleInputChange("status_pagamento", value)}
                       >
-                        <SelectTrigger className="bg-gray-700 border-gray-600 text-white h-11">
+                        <SelectTrigger className="bg-gray-700 border-gray-600 text-white h-12 md:h-11 text-base">
                           <SelectValue placeholder="Selecione" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="pendente">Pendente</SelectItem>
-                          <SelectItem value="pago">Pago</SelectItem>
+                          <SelectItem value="pendente" className="text-base">
+                            Pendente
+                          </SelectItem>
+                          <SelectItem value="pago" className="text-base">
+                            Pago
+                          </SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
                   </div>
 
                   <div className="space-y-2">
-                    <Label className="text-gray-300 text-sm">Valor Total (R$)</Label>
+                    <Label className="text-gray-300 text-base md:text-sm">Valor Total (R$)</Label>
                     <div className="bg-gray-700 border border-gray-600 rounded-lg p-4">
-                      <p className="text-3xl font-bold text-white">R$ {calculateTotal().toFixed(2)}</p>
-                      <p className="text-xs text-gray-400 mt-1">
-                        {calculateDays() > 0
-                          ? `${calculateDays()} dia(s) • R$ ${(calculateTotal() / calculateDays()).toFixed(2)}/dia`
-                          : "Calculado automaticamente com base nos equipamentos selecionados"}
+                      <p className="text-4xl md:text-3xl font-bold text-white">R$ {calculateTotal().toFixed(2)}</p>
+                      <p className="text-sm md:text-xs text-gray-400 mt-1">
+                        Calculado com base nos equipamentos selecionados
                       </p>
                     </div>
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="observacoes" className="text-gray-300 text-sm">
+                    <Label htmlFor="observacoes" className="text-gray-300 text-base md:text-sm">
                       Observações
                     </Label>
                     <Textarea
@@ -518,17 +566,17 @@ export function ContractCreationForm({ contract, onSuccess }: ContractCreationFo
                       onChange={(e) => handleInputChange("observacoes", e.target.value)}
                       placeholder="Observações adicionais sobre o contrato..."
                       rows={4}
-                      className="bg-gray-700 border-gray-600 text-white resize-none"
+                      className="bg-gray-700 border-gray-600 text-white resize-none text-base"
                     />
                   </div>
 
-                  <div className="flex gap-3 pt-4">
+                  <div className="flex flex-col sm:flex-row gap-3 pt-4">
                     <Button
                       type="submit"
                       disabled={isLoading || items.length === 0}
-                      className="flex-1 bg-orange-500 hover:bg-orange-600 text-white h-11"
+                      className="flex-1 bg-orange-500 hover:bg-orange-600 text-white h-12 md:h-11 text-base font-medium"
                     >
-                      {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                      {isLoading && <Loader2 className="mr-2 h-5 w-5 md:h-4 md:w-4 animate-spin" />}
                       Salvar Contrato
                     </Button>
                     <Button
@@ -536,15 +584,15 @@ export function ContractCreationForm({ contract, onSuccess }: ContractCreationFo
                       variant="outline"
                       onClick={() => router.push("/contratos")}
                       disabled={isLoading}
-                      className="bg-gray-700 border-gray-600 text-white hover:bg-gray-600 h-11"
+                      className="bg-gray-700 border-gray-600 text-white hover:bg-gray-600 h-12 md:h-11 text-base font-medium"
                     >
                       Cancelar
                     </Button>
                   </div>
 
                   {error && (
-                    <div className="bg-red-900/30 border border-red-700 rounded-lg p-3">
-                      <p className="text-sm text-red-400">{error}</p>
+                    <div className="bg-red-900/30 border border-red-700 rounded-lg p-4">
+                      <p className="text-base md:text-sm text-red-400">{error}</p>
                     </div>
                   )}
                 </div>
@@ -587,7 +635,8 @@ export function ContractCreationForm({ contract, onSuccess }: ContractCreationFo
                           </div>
                           <div className="flex-1 min-w-0">
                             <p className="text-white font-medium text-sm truncate">{item.equipamento?.nome}</p>
-                            <p className="text-gray-400 text-xs">R$ {item.valor_unitario.toFixed(2)}/dia</p>
+                            <p className="text-gray-400 text-xs">R$ {item.valor_unitario.toFixed(2)}/mês</p>{" "}
+                            {/* Display monthly price */}
                             <div className="flex items-center gap-2 mt-1">
                               <Badge
                                 variant="secondary"
@@ -637,7 +686,8 @@ export function ContractCreationForm({ contract, onSuccess }: ContractCreationFo
                                   +
                                 </Button>
                               </div>
-                              <span className="text-xs text-gray-400">= R$ {item.valor_total.toFixed(2)}</span>
+                              <span className="text-xs text-gray-400">= R$ {item.valor_total.toFixed(2)}</span>{" "}
+                              {/* Display total for this item */}
                             </div>
                           </div>
                           <Button

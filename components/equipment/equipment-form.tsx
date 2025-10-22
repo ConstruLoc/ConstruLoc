@@ -26,6 +26,7 @@ export function EquipmentForm({ equipment, categories, onSuccess }: EquipmentFor
     descricao: equipment?.descricao || "",
     numero_serie: equipment?.numero_serie || "",
     localizacao: equipment?.localizacao || "",
+    valor_mensal: equipment?.valor_mensal || "",
     valor_diario: equipment?.valor_diario || "",
     categoria_id: equipment?.categoria_id || "",
     status: equipment?.status || "disponivel",
@@ -103,12 +104,12 @@ export function EquipmentForm({ equipment, categories, onSuccess }: EquipmentFor
         descricao: formData.descricao,
         numero_serie: formData.numero_serie.trim() || null,
         localizacao: formData.localizacao.trim() || null,
-        valor_diario: Number.parseFloat(formData.valor_diario.toString()),
+        valor_mensal: formData.valor_mensal ? Number.parseFloat(formData.valor_mensal.toString()) : null,
+        valor_diario: formData.valor_diario ? Number.parseFloat(formData.valor_diario.toString()) : null,
         categoria_id: formData.categoria_id.trim(),
         status: formData.status,
         quantidade: Number.parseInt(formData.quantidade.toString()) || 1,
         valor_semanal: null,
-        valor_mensal: null,
         imagem_url: imageUrl,
       }
 
@@ -260,8 +261,24 @@ export function EquipmentForm({ equipment, categories, onSuccess }: EquipmentFor
           </div>
 
           <div className="space-y-3">
+            <Label htmlFor="valor_mensal" className="text-white font-semibold">
+              Valor Mensal (R$)
+            </Label>
+            <Input
+              id="valor_mensal"
+              type="number"
+              step="0.01"
+              value={formData.valor_mensal}
+              onChange={(e) => handleInputChange("valor_mensal", e.target.value)}
+              placeholder="0,00"
+              className="bg-gray-700 border-gray-600 text-white placeholder:text-gray-500 focus:border-orange-500 focus:ring-orange-500 h-12 text-base"
+            />
+            <p className="text-xs text-gray-500">Valor da locação mensal do equipamento (opcional)</p>
+          </div>
+
+          <div className="space-y-3">
             <Label htmlFor="valor_diario" className="text-white font-semibold">
-              Preço Diário (R$) *
+              Valor Diário (R$)
             </Label>
             <Input
               id="valor_diario"
@@ -271,8 +288,8 @@ export function EquipmentForm({ equipment, categories, onSuccess }: EquipmentFor
               onChange={(e) => handleInputChange("valor_diario", e.target.value)}
               placeholder="0,00"
               className="bg-gray-700 border-gray-600 text-white placeholder:text-gray-500 focus:border-orange-500 focus:ring-orange-500 h-12 text-base"
-              required
             />
+            <p className="text-xs text-gray-500">Valor da locação diária do equipamento (opcional)</p>
           </div>
         </div>
 
