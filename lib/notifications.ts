@@ -23,9 +23,12 @@ export async function sendPushNotification(data: NotificationData) {
 
     await registration.showNotification(data.title, {
       body: data.body,
-      icon: data.icon || "/logo.png",
-      badge: "/logo.png",
-      vibrate: [200, 100, 200],
+      icon: data.icon || "/construloc-logo.png",
+      badge: "/construloc-logo.png",
+      vibrate: [200, 100, 200, 100, 200],
+      tag: "construloc-notification",
+      requireInteraction: true,
+      silent: false,
       data: {
         url: data.url || "/dashboard",
         dateOfArrival: Date.now(),
@@ -33,11 +36,11 @@ export async function sendPushNotification(data: NotificationData) {
       actions: [
         {
           action: "open",
-          title: "Abrir",
+          title: "Ver Detalhes",
         },
         {
           action: "close",
-          title: "Fechar",
+          title: "Dispensar",
         },
       ],
     })
@@ -86,9 +89,12 @@ export async function schedulePaymentNotifications() {
     const daysUntilPayment = Math.ceil((paymentDate.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))
 
     if (daysUntilPayment <= 5 && daysUntilPayment >= 0) {
+      const emoji = daysUntilPayment <= 2 ? "🚨" : "⏰"
+      const urgency = daysUntilPayment <= 2 ? "URGENTE" : "Lembrete"
+
       await sendPushNotification({
-        title: "Pagamento Próximo",
-        body: `O contrato ${contract.numero_contrato} do cliente ${contract.clientes?.nome} vence em ${daysUntilPayment} dia(s). Valor: R$ ${contract.valor_total?.toFixed(2)}`,
+        title: `${emoji} ${urgency}: Pagamento em ${daysUntilPayment} dia${daysUntilPayment !== 1 ? "s" : ""}`,
+        body: `Cliente: ${contract.clientes?.nome}\nContrato: ${contract.numero_contrato}\nValor: R$ ${contract.valor_total?.toFixed(2)}`,
         url: `/contratos/${contract.id}`,
       })
     }

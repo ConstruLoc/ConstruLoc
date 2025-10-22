@@ -2,9 +2,8 @@
 
 import type React from "react"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback, useMemo, useRef } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { useUser } from "@/contexts/user-context"
 import { Badge } from "@/components/ui/badge"
 import { Calendar, CheckCircle, AlertTriangle, Clock, XCircle, Wrench, TrendingDown } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
@@ -31,28 +30,27 @@ interface ExpiringContract {
 
 export function DashboardAlerts() {
   const [alerts, setAlerts] = useState<Alert[]>([])
-  const [expiringContracts, setExpiringContracts] = useState<ExpiringContract[]>([])
   const [loading, setLoading] = useState(true)
-  const { user, profile } = useUser()
-  const supabase = createClient()
+  const supabase = useMemo(() => createClient(), [])
+  const hasFetchedRef = useRef(false)
+  const fetchTimeoutRef = useRef<NodeJS.Timeout>()
 
-  useEffect(() => {
-    fetchAlerts()
-  }, [user, profile])
+  const fetchAlerts = useCallback(async () => {
+    if (hasFetchedRef.current) return
+    hasFetchedRef.current = true
 
-  const fetchAlerts = async () => {
     try {
-      const { count: availableEquipment, error: equipmentError } = await supabase
+      const { count: availableEquipment } = await supabase
         .from("equipamentos")
         .select("*", { count: "exact", head: true })
         .eq("status", "disponivel")
 
-      const { count: maintenanceEquipment, error: maintenanceError } = await supabase
+      const { count: maintenanceEquipment } = await supabase
         .from("equipamentos")
         .select("*", { count: "exact", head: true })
         .eq("status", "manutencao")
 
-      const { data: lowStockEquipment, error: lowStockError } = await supabase
+      const { data: lowStockEquipment } = await supabase
         .from("equipamentos")
         .select("id, nome, quantidade")
         .eq("status", "disponivel")
@@ -62,7 +60,7 @@ export function DashboardAlerts() {
       const today = new Date()
       today.setHours(0, 0, 0, 0)
 
-      const { data: contracts, error: contractsError } = await supabase
+      const { data: contracts } = await supabase
         .from("contratos")
         .select(`
           id,
@@ -207,13 +205,25 @@ export function DashboardAlerts() {
       }
 
       setAlerts(alertsList)
-      setExpiringContracts(expiringContractsList)
     } catch (error) {
-      console.error("[v0] Error fetching dashboard alerts:", error)
+      console.error("Error fetching dashboard alerts:", error)
     } finally {
       setLoading(false)
+      fetchTimeoutRef.current = setTimeout(() => {
+        hasFetchedRef.current = false
+      }, 30000) // Allow refetch after 30 seconds
     }
-  }
+  }, [supabase])
+
+  useEffect(() => {
+    fetchAlerts()
+
+    return () => {
+      if (fetchTimeoutRef.current) {
+        clearTimeout(fetchTimeoutRef.current)
+      }
+    }
+  }, [fetchAlerts])
 
   const getAlertStyles = (type: string) => {
     switch (type) {

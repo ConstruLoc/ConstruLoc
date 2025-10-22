@@ -9,7 +9,18 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Switch } from "@/components/ui/switch"
-import { Bell, BellOff, RotateCcw, AlertTriangle, Download, Database, Smartphone, Loader2 } from "lucide-react"
+import {
+  Bell,
+  BellOff,
+  RotateCcw,
+  AlertTriangle,
+  Download,
+  Database,
+  Smartphone,
+  Loader2,
+  ChevronDown,
+  ChevronUp,
+} from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 import { useToast } from "@/hooks/use-toast"
 import {
@@ -44,6 +55,8 @@ export function SystemSettings() {
   const [isTesting, setIsTesting] = useState(false)
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null)
   const [isInstallable, setIsInstallable] = useState(false)
+
+  const [showInstructions, setShowInstructions] = useState(false)
 
   const supabase = createClient()
   const { toast } = useToast()
@@ -437,45 +450,67 @@ export function SystemSettings() {
                         <div className="flex-1">
                           <p className="text-sm font-medium text-red-300 mb-1">Permissão Bloqueada</p>
                           <p className="text-xs text-red-300/80">
-                            Você bloqueou as notificações. Para reativar, siga as instruções abaixo:
+                            Você bloqueou as notificações. Clique no botão abaixo para ver como reativar.
                           </p>
                         </div>
                       </div>
 
-                      {/* Instruções específicas por navegador */}
-                      <div className="rounded-lg bg-gray-900/50 border border-gray-700 p-4 space-y-3">
-                        <p className="text-sm font-semibold text-white">Como reativar notificações:</p>
+                      {/* Botão para expandir/colapsar instruções */}
+                      <Button
+                        type="button"
+                        onClick={() => setShowInstructions(!showInstructions)}
+                        variant="outline"
+                        className="w-full border-orange-500/30 bg-orange-500/10 hover:bg-orange-500/20 text-orange-300"
+                      >
+                        {showInstructions ? (
+                          <>
+                            <ChevronUp className="mr-2 h-4 w-4" />
+                            Ocultar Instruções
+                          </>
+                        ) : (
+                          <>
+                            <ChevronDown className="mr-2 h-4 w-4" />
+                            Ver Como Reativar
+                          </>
+                        )}
+                      </Button>
 
-                        <div className="space-y-2 text-xs text-gray-300">
-                          <div className="flex items-start gap-2">
-                            <span className="font-semibold text-orange-400 min-w-[80px]">Chrome/Edge:</span>
-                            <span>
-                              Clique no ícone de cadeado 🔒 ao lado da URL → Configurações do site → Notificações →
-                              Permitir
-                            </span>
+                      {/* Instruções colapsáveis */}
+                      {showInstructions && (
+                        <div className="rounded-lg bg-gray-900/50 border border-gray-700 p-4 space-y-3 animate-in slide-in-from-top-2">
+                          <p className="text-sm font-semibold text-white">Como reativar notificações:</p>
+
+                          <div className="space-y-2 text-xs text-gray-300">
+                            <div className="flex items-start gap-2">
+                              <span className="font-semibold text-orange-400 min-w-[80px]">Chrome/Edge:</span>
+                              <span>
+                                Clique no ícone de cadeado 🔒 ao lado da URL → Configurações do site → Notificações →
+                                Permitir
+                              </span>
+                            </div>
+                            <div className="flex items-start gap-2">
+                              <span className="font-semibold text-orange-400 min-w-[80px]">Firefox:</span>
+                              <span>
+                                Clique no ícone de escudo 🛡️ → Configurações → Permissões → Notificações → Permitir
+                              </span>
+                            </div>
+                            <div className="flex items-start gap-2">
+                              <span className="font-semibold text-orange-400 min-w-[80px]">Safari:</span>
+                              <span>Safari → Preferências → Sites → Notificações → Permitir para este site</span>
+                            </div>
+                            <div className="flex items-start gap-2">
+                              <span className="font-semibold text-orange-400 min-w-[80px]">Mobile:</span>
+                              <span>Configurações do celular → Apps → Navegador → Notificações → Permitir</span>
+                            </div>
                           </div>
-                          <div className="flex items-start gap-2">
-                            <span className="font-semibold text-orange-400 min-w-[80px]">Firefox:</span>
-                            <span>
-                              Clique no ícone de escudo 🛡️ → Configurações → Permissões → Notificações → Permitir
-                            </span>
-                          </div>
-                          <div className="flex items-start gap-2">
-                            <span className="font-semibold text-orange-400 min-w-[80px]">Safari:</span>
-                            <span>Safari → Preferências → Sites → Notificações → Permitir para este site</span>
-                          </div>
-                          <div className="flex items-start gap-2">
-                            <span className="font-semibold text-orange-400 min-w-[80px]">Mobile:</span>
-                            <span>Configurações do celular → Apps → Navegador → Notificações → Permitir</span>
+
+                          <div className="pt-2 border-t border-gray-700">
+                            <p className="text-xs text-gray-400">
+                              Após alterar as configurações, recarregue esta página para ativar as notificações.
+                            </p>
                           </div>
                         </div>
-
-                        <div className="pt-2 border-t border-gray-700">
-                          <p className="text-xs text-gray-400">
-                            Após alterar as configurações, recarregue esta página para ativar as notificações.
-                          </p>
-                        </div>
-                      </div>
+                      )}
                     </div>
                   )}
 
@@ -540,7 +575,7 @@ export function SystemSettings() {
                     className="w-full bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-700 hover:to-orange-600 text-white shadow-lg shadow-orange-500/20 transition-all hover:scale-105 hover:shadow-orange-500/30 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
                   >
                     <Bell className="mr-2 h-4 w-4" />
-                    {pushPermission === "denied" ? "Bloqueado - Veja instruções acima" : "Ativar Notificações Push"}
+                    {pushPermission === "denied" ? "Reativar Notificações" : "Ativar Notificações Push"}
                   </Button>
                 )}
               </div>

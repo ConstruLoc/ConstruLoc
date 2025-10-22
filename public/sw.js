@@ -89,9 +89,13 @@ self.addEventListener("push", (event) => {
   const title = data.title || "ConstruLoc"
   const options = {
     body: data.body || "Você tem uma nova notificação",
-    icon: data.icon || "/logo.png",
-    badge: "/logo.png",
-    vibrate: [200, 100, 200],
+    icon: data.icon || "/construloc-logo.png",
+    badge: "/construloc-logo.png",
+    image: data.image,
+    vibrate: [200, 100, 200, 100, 200],
+    tag: data.tag || "construloc-notification",
+    requireInteraction: true,
+    silent: false,
     data: {
       url: data.url || "/dashboard",
       dateOfArrival: Date.now(),
@@ -99,11 +103,13 @@ self.addEventListener("push", (event) => {
     actions: [
       {
         action: "open",
-        title: "Abrir",
+        title: "Ver Detalhes",
+        icon: "/icons/open.png",
       },
       {
         action: "close",
-        title: "Fechar",
+        title: "Dispensar",
+        icon: "/icons/close.png",
       },
     ],
   }
