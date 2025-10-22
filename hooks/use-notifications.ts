@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react"
 import { createClient } from "@/lib/supabase/client"
-import { useToast } from "@/hooks/use-toast"
 
 interface ContractNotification {
   id: string
@@ -16,7 +15,6 @@ export function useNotifications() {
   const [permission, setPermission] = useState<NotificationPermission>("default")
   const [isSupported, setIsSupported] = useState(false)
   const supabase = createClient()
-  const { toast } = useToast()
 
   useEffect(() => {
     // Check if notifications are supported
@@ -51,8 +49,6 @@ export function useNotifications() {
 
   const checkExpiringContracts = async () => {
     try {
-      console.log("[v0] Checking for expiring contracts...")
-
       // Get contracts expiring in the next 7 days or already expired
       const today = new Date()
       const nextWeek = new Date()
@@ -71,16 +67,13 @@ export function useNotifications() {
         .lte("data_fim", nextWeek.toISOString().split("T")[0])
 
       if (error) {
-        console.error("[v0] Error checking contracts:", error)
+        console.error("Error checking contracts:", error)
         return
       }
 
       if (!contracts || contracts.length === 0) {
-        console.log("[v0] No expiring contracts found")
         return
       }
-
-      console.log(`[v0] Found ${contracts.length} expiring contracts`)
 
       contracts.forEach((contract: any) => {
         const expiryDate = new Date(contract.data_fim)
@@ -103,22 +96,15 @@ export function useNotifications() {
           message = `Contrato ${contract.numero_contrato} vence em ${diffDays} dias`
         }
 
-        // Show browser notification
+        // Show only browser notification (no toast)
         showNotification("ConstruLoc - Contrato Vencendo", {
           body: `${message}\nCliente: ${contract.clientes?.nome}`,
           tag: `contract-${contract.id}`,
           requireInteraction: isUrgent,
         })
-
-        // Show toast notification
-        toast({
-          title: isUrgent ? "⚠️ Contrato Vencendo" : "📅 Lembrete de Contrato",
-          description: `${message}\nCliente: ${contract.clientes?.nome}`,
-          variant: isUrgent ? "destructive" : "default",
-        })
       })
     } catch (error) {
-      console.error("[v0] Error in checkExpiringContracts:", error)
+      console.error("Error in checkExpiringContracts:", error)
     }
   }
 

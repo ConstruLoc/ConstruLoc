@@ -20,6 +20,7 @@ import {
   Loader2,
   ChevronDown,
   ChevronUp,
+  RefreshCw,
 } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 import { useToast } from "@/hooks/use-toast"
@@ -57,15 +58,20 @@ export function SystemSettings() {
   const [isInstallable, setIsInstallable] = useState(false)
 
   const [showInstructions, setShowInstructions] = useState(false)
+  const [isCheckingPermission, setIsCheckingPermission] = useState(false)
 
   const supabase = createClient()
   const { toast } = useToast()
 
   useEffect(() => {
-    if ("Notification" in window && "serviceWorker" in navigator) {
-      setPushSupported(true)
-      setPushPermission(Notification.permission)
+    const checkPermission = () => {
+      if ("Notification" in window && "serviceWorker" in navigator) {
+        setPushSupported(true)
+        setPushPermission(Notification.permission)
+      }
     }
+
+    checkPermission()
 
     const savedSettings = localStorage.getItem("system_settings")
     if (savedSettings) {
@@ -75,9 +81,21 @@ export function SystemSettings() {
     const checkSettings = localStorage.getItem("system_settings")
     if (checkSettings) {
       const parsed = JSON.parse(checkSettings)
-      if (parsed.notifications_push) {
+      if (parsed.notifications_push && Notification.permission === "granted") {
         startNotificationScheduler()
       }
+    }
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        checkPermission()
+      }
+    }
+
+    document.addEventListener("visibilitychange", handleVisibilityChange)
+
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange)
     }
   }, [])
 
@@ -97,6 +115,32 @@ export function SystemSettings() {
 
   const handleInputChange = (field: string, value: string | boolean) => {
     setSettings((prev) => ({ ...prev, [field]: value }))
+  }
+
+  const recheckPermission = () => {
+    setIsCheckingPermission(true)
+    setTimeout(() => {
+      if ("Notification" in window) {
+        const currentPermission = Notification.permission
+        setPushPermission(currentPermission)
+
+        if (currentPermission === "granted") {
+          handleInputChange("notifications_push", true)
+          toast({
+            title: "Permissão concedida!",
+            description: "As notificações estão ativas.",
+          })
+        } else if (currentPermission === "denied") {
+          handleInputChange("notifications_push", false)
+          toast({
+            title: "Permissão bloqueada",
+            description: "Siga as instruções para reativar.",
+            variant: "destructive",
+          })
+        }
+      }
+      setIsCheckingPermission(false)
+    }, 500)
   }
 
   const requestPushPermission = async () => {
@@ -455,7 +499,6 @@ export function SystemSettings() {
                         </div>
                       </div>
 
-                      {/* Botão para expandir/colapsar instruções */}
                       <Button
                         type="button"
                         onClick={() => setShowInstructions(!showInstructions)}
@@ -506,7 +549,7 @@ export function SystemSettings() {
 
                           <div className="pt-2 border-t border-gray-700">
                             <p className="text-xs text-gray-400">
-                              Após alterar as configurações, recarregue esta página para ativar as notificações.
+                              Após alterar as configurações, clique no botão "Verificar Status" abaixo.
                             </p>
                           </div>
                         </div>
@@ -535,49 +578,57 @@ export function SystemSettings() {
                 </div>
               </div>
 
-              {/* Botões de ação */}
-              <div className="flex flex-col sm:flex-row gap-2 pt-2">
-                {pushPermission === "granted" ? (
-                  <>
-                    <Button
-                      type="button"
-                      onClick={testNotification}
-                      disabled={isTesting}
-                      className="flex-1 bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-700 hover:to-orange-600 text-white shadow-lg shadow-orange-500/20 transition-all hover:scale-105 hover:shadow-orange-500/30"
-                    >
-                      {isTesting ? (
-                        <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          Enviando...
-                        </>
-                      ) : (
-                        <>
-                          <Bell className="mr-2 h-4 w-4" />
-                          Testar Notificação
-                        </>
-                      )}
-                    </Button>
-                    <div className="flex items-center gap-2 sm:ml-auto">
-                      <span className="text-xs text-gray-400">Ativo</span>
-                      <Switch
-                        id="notifications_push"
-                        checked={settings.notifications_push}
-                        onCheckedChange={(checked) => handleInputChange("notifications_push", checked)}
-                        className="data-[state=checked]:bg-green-500"
-                      />
-                    </div>
-                  </>
-                ) : (
-                  <Button
-                    type="button"
-                    onClick={requestPushPermission}
-                    disabled={!pushSupported || pushPermission === "denied"}
-                    className="w-full bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-700 hover:to-orange-600 text-white shadow-lg shadow-orange-500/20 transition-all hover:scale-105 hover:shadow-orange-500/30 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
-                  >
-                    <Bell className="mr-2 h-4 w-4" />
-                    {pushPermission === "denied" ? "Reativar Notificações" : "Ativar Notificações Push"}
-                  </Button>
-                )}
+              <div className="flex flex-col gap-2 pt-2">
+                {/* Botão de Ativar/Verificar Status */}
+                <Button
+                  type="button"
+                  onClick={pushPermission === "denied" ? recheckPermission : requestPushPermission}
+                  disabled={!pushSupported || isCheckingPermission}
+                  className="w-full bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-700 hover:to-orange-600 text-white shadow-lg shadow-orange-500/20 transition-all hover:scale-105 hover:shadow-orange-500/30 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                >
+                  {isCheckingPermission ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Verificando...
+                    </>
+                  ) : pushPermission === "denied" ? (
+                    <>
+                      <RefreshCw className="mr-2 h-4 w-4" />
+                      Verificar Status
+                    </>
+                  ) : pushPermission === "granted" ? (
+                    <>
+                      <Bell className="mr-2 h-4 w-4" />
+                      Notificações Ativas
+                    </>
+                  ) : (
+                    <>
+                      <Bell className="mr-2 h-4 w-4" />
+                      Ativar Notificações Push
+                    </>
+                  )}
+                </Button>
+
+                {/* Botão de Testar - sempre visível */}
+                <Button
+                  type="button"
+                  onClick={testNotification}
+                  disabled={isTesting || pushPermission !== "granted"}
+                  variant="outline"
+                  className="w-full border-orange-500/30 bg-orange-500/10 hover:bg-orange-500/20 text-orange-300 disabled:opacity-50"
+                >
+                  {isTesting ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Enviando...
+                    </>
+                  ) : (
+                    <>
+                      <Bell className="mr-2 h-4 w-4" />
+                      Testar Notificação
+                    </>
+                  )}
+                </Button>
               </div>
             </div>
           </div>
