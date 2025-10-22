@@ -95,8 +95,15 @@ export async function schedulePaymentNotifications() {
   }
 }
 
+let schedulerIntervalId: NodeJS.Timeout | null = null
+
 export function startNotificationScheduler() {
   if (typeof window === "undefined") return
+
+  if (schedulerIntervalId !== null) {
+    console.log("[Notifications] Scheduler already running, skipping initialization")
+    return schedulerIntervalId
+  }
 
   const checkInterval = 60 * 60 * 1000
 
@@ -112,7 +119,17 @@ export function startNotificationScheduler() {
 
   check()
 
-  setInterval(check, checkInterval)
+  schedulerIntervalId = setInterval(check, checkInterval)
 
   console.log("[Notifications] Scheduler started - checking every hour")
+
+  return schedulerIntervalId
+}
+
+export function stopNotificationScheduler() {
+  if (schedulerIntervalId !== null) {
+    clearInterval(schedulerIntervalId)
+    schedulerIntervalId = null
+    console.log("[Notifications] Scheduler stopped")
+  }
 }

@@ -1,12 +1,16 @@
 "use client"
 
 import { useEffect } from "react"
-import { startNotificationScheduler } from "@/lib/notifications"
+import { startNotificationScheduler, stopNotificationScheduler } from "@/lib/notifications"
 
 export function NotificationScheduler() {
   useEffect(() => {
-    startNotificationScheduler()
-  }, [])
+    const intervalId = startNotificationScheduler()
+
+    return () => {
+      stopNotificationScheduler()
+    }
+  }, []) // Array de dependências vazio garante que só roda uma vez
 
   return null
 }

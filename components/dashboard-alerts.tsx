@@ -37,28 +37,20 @@ export function DashboardAlerts() {
   const supabase = createClient()
 
   useEffect(() => {
-    console.log("[v0] DashboardAlerts mounted, fetching alerts...")
     fetchAlerts()
   }, [user, profile])
 
   const fetchAlerts = async () => {
     try {
-      console.log("[v0] Starting fetchAlerts...")
-
-      // Count available equipment
       const { count: availableEquipment, error: equipmentError } = await supabase
         .from("equipamentos")
         .select("*", { count: "exact", head: true })
         .eq("status", "disponivel")
 
-      console.log("[v0] Available equipment count:", availableEquipment, "Error:", equipmentError)
-
       const { count: maintenanceEquipment, error: maintenanceError } = await supabase
         .from("equipamentos")
         .select("*", { count: "exact", head: true })
         .eq("status", "manutencao")
-
-      console.log("[v0] Maintenance equipment count:", maintenanceEquipment, "Error:", maintenanceError)
 
       const { data: lowStockEquipment, error: lowStockError } = await supabase
         .from("equipamentos")
@@ -67,11 +59,8 @@ export function DashboardAlerts() {
         .lte("quantidade", 2)
         .gt("quantidade", 0)
 
-      console.log("[v0] Low stock equipment:", lowStockEquipment, "Error:", lowStockError)
-
       const today = new Date()
       today.setHours(0, 0, 0, 0)
-      console.log("[v0] Today's date:", today)
 
       const { data: contracts, error: contractsError } = await supabase
         .from("contratos")
@@ -86,16 +75,11 @@ export function DashboardAlerts() {
         .not("status", "in", "(cancelado,finalizado)")
         .order("data_fim")
 
-      console.log("[v0] Fetched contracts:", contracts, "Error:", contractsError)
-      console.log("[v0] Number of contracts:", contracts?.length || 0)
-
       const expiringContractsList: ExpiringContract[] =
         contracts?.map((contract: any) => {
           const dataFim = new Date(contract.data_fim)
           dataFim.setHours(0, 0, 0, 0)
           const daysUntilExpiry = Math.ceil((dataFim.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
-
-          console.log("[v0] Contract:", contract.numero_contrato, "Days until expiry:", daysUntilExpiry)
 
           return {
             id: contract.id,
@@ -106,11 +90,8 @@ export function DashboardAlerts() {
           }
         }) || []
 
-      console.log("[v0] Expiring contracts list:", expiringContractsList)
-
       const alertsList: Alert[] = []
 
-      // Process expiring contracts and create specific notifications
       if (expiringContractsList.length > 0) {
         const expiredContracts: any[] = []
         const expiringToday: any[] = []
@@ -136,7 +117,6 @@ export function DashboardAlerts() {
           }
         })
 
-        // Create alerts for expired contracts (devoluções atrasadas)
         if (expiredContracts.length > 0) {
           expiredContracts.forEach((contract) => {
             alertsList.push({
@@ -150,7 +130,6 @@ export function DashboardAlerts() {
           })
         }
 
-        // Create alerts for contracts expiring today (devoluções hoje)
         if (expiringToday.length > 0) {
           expiringToday.forEach((contract) => {
             alertsList.push({
@@ -164,7 +143,6 @@ export function DashboardAlerts() {
           })
         }
 
-        // Create alerts for contracts expiring in 1-2 days (devoluções próximas)
         if (expiring1to2Days.length > 0) {
           expiring1to2Days.forEach((contract) => {
             alertsList.push({
@@ -178,7 +156,6 @@ export function DashboardAlerts() {
           })
         }
 
-        // Create summary alert for contracts expiring in 3-7 days
         if (expiring3to7Days.length > 0) {
           alertsList.push({
             id: "expiring-soon",
@@ -217,7 +194,6 @@ export function DashboardAlerts() {
         })
       }
 
-      // Add alert for available equipment
       if (availableEquipment && availableEquipment > 0) {
         alertsList.push({
           id: "equipamentos-disponiveis",
@@ -230,16 +206,12 @@ export function DashboardAlerts() {
         })
       }
 
-      console.log("[v0] Final alerts list:", alertsList)
-      console.log("[v0] Total alerts:", alertsList.length)
-
       setAlerts(alertsList)
       setExpiringContracts(expiringContractsList)
     } catch (error) {
       console.error("[v0] Error fetching dashboard alerts:", error)
     } finally {
       setLoading(false)
-      console.log("[v0] Finished fetching alerts, loading set to false")
     }
   }
 
@@ -334,7 +306,6 @@ export function DashboardAlerts() {
                 </div>
               )
 
-              // If there is a contractId, make the alert clickable
               if (alert.contractId) {
                 return (
                   <Link key={alert.id} href={`/contratos/${alert.contractId}`}>
@@ -343,7 +314,6 @@ export function DashboardAlerts() {
                 )
               }
 
-              // If there is a link, make the alert clickable
               if (alert.link) {
                 return (
                   <Link key={alert.id} href={alert.link}>

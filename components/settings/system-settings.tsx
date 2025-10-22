@@ -339,62 +339,176 @@ export function SystemSettings() {
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Notificações</CardTitle>
-          <CardDescription>Configure como você deseja receber alertas sobre pagamentos</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <Label htmlFor="notifications_email">Notificações por Email</Label>
-              <p className="text-sm text-gray-500">Receba alertas sobre contratos e pagamentos</p>
+      <Card className="overflow-hidden border-orange-500/30 bg-gradient-to-br from-gray-900 to-gray-800">
+        <CardHeader className="border-b border-orange-500/20 bg-gradient-to-r from-orange-500/10 to-transparent">
+          <div className="flex items-center gap-3">
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-orange-500/20 backdrop-blur-sm">
+              <Bell className="h-6 w-6 text-orange-400" />
             </div>
-            <Switch
-              id="notifications_email"
-              checked={settings.notifications_email}
-              onCheckedChange={(checked) => handleInputChange("notifications_email", checked)}
-            />
+            <div>
+              <CardTitle className="text-xl">Central de Notificações</CardTitle>
+              <CardDescription>Receba alertas sobre contratos e pagamentos</CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-6 pt-6">
+          {/* Notificações por Email */}
+          <div className="group relative overflow-hidden rounded-xl border border-gray-700 bg-gray-800/50 p-5 transition-all hover:border-orange-500/50 hover:shadow-lg hover:shadow-orange-500/10">
+            <div className="absolute inset-0 bg-gradient-to-br from-orange-500/5 to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
+            <div className="relative flex items-center justify-between">
+              <div className="flex items-start gap-4">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-500/10 transition-transform group-hover:scale-110">
+                  <svg className="h-5 w-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                    />
+                  </svg>
+                </div>
+                <div className="flex-1">
+                  <Label htmlFor="notifications_email" className="text-base font-semibold text-white cursor-pointer">
+                    Notificações por Email
+                  </Label>
+                  <p className="text-sm text-gray-400 mt-1">Receba alertas sobre contratos e pagamentos no seu email</p>
+                </div>
+              </div>
+              <Switch
+                id="notifications_email"
+                checked={settings.notifications_email}
+                onCheckedChange={(checked) => handleInputChange("notifications_email", checked)}
+                className="data-[state=checked]:bg-blue-500"
+              />
+            </div>
           </div>
 
-          <div className="border-t pt-4">
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2">
-                    <Label htmlFor="notifications_push">Notificações Push (Celular e Computador)</Label>
-                    {pushPermission === "granted" ? (
-                      <Bell className="h-4 w-4 text-green-500" />
-                    ) : (
-                      <BellOff className="h-4 w-4 text-gray-400" />
-                    )}
-                  </div>
-                  <p className="text-sm text-gray-500">
-                    Receba alertas 5 dias antes dos pagamentos, mesmo com o app fechado
-                  </p>
-                  {!pushSupported && (
-                    <p className="text-sm text-red-500 mt-1">Notificações push não são suportadas neste navegador</p>
-                  )}
-                  {pushPermission === "denied" && (
-                    <p className="text-sm text-orange-500 mt-1">
-                      Permissão negada. Ative nas configurações do navegador.
-                    </p>
-                  )}
-                  {pushPermission === "granted" && (
-                    <p className="text-sm text-green-500 mt-1">
-                      Notificações ativadas! Funciona no celular e computador.
-                    </p>
+          {/* Notificações Push */}
+          <div className="group relative overflow-hidden rounded-xl border border-gray-700 bg-gray-800/50 transition-all hover:border-orange-500/50 hover:shadow-lg hover:shadow-orange-500/10">
+            <div className="absolute inset-0 bg-gradient-to-br from-orange-500/5 to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
+            <div className="relative p-5 space-y-4">
+              <div className="flex items-start gap-4">
+                <div
+                  className={`flex h-10 w-10 items-center justify-center rounded-lg transition-all ${
+                    pushPermission === "granted"
+                      ? "bg-green-500/10 group-hover:scale-110"
+                      : pushPermission === "denied"
+                        ? "bg-red-500/10"
+                        : "bg-orange-500/10 group-hover:scale-110"
+                  }`}
+                >
+                  {pushPermission === "granted" ? (
+                    <Bell className="h-5 w-5 text-green-400" />
+                  ) : pushPermission === "denied" ? (
+                    <BellOff className="h-5 w-5 text-red-400" />
+                  ) : (
+                    <Bell className="h-5 w-5 text-orange-400" />
                   )}
                 </div>
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Label className="text-base font-semibold text-white">Notificações Push</Label>
+                    {pushPermission === "granted" && (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-green-500/10 px-2 py-0.5 text-xs font-medium text-green-400 border border-green-500/20">
+                        <span className="h-1.5 w-1.5 rounded-full bg-green-400 animate-pulse" />
+                        Ativo
+                      </span>
+                    )}
+                    {pushPermission === "denied" && (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-red-500/10 px-2 py-0.5 text-xs font-medium text-red-400 border border-red-500/20">
+                        Bloqueado
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-sm text-gray-400">Alertas 5 dias antes dos pagamentos, mesmo com o app fechado</p>
+
+                  {/* Status Messages */}
+                  {!pushSupported && (
+                    <div className="mt-3 flex items-start gap-2 rounded-lg bg-red-500/10 border border-red-500/20 p-3">
+                      <AlertTriangle className="h-4 w-4 text-red-400 mt-0.5 flex-shrink-0" />
+                      <p className="text-sm text-red-300">Notificações push não são suportadas neste navegador</p>
+                    </div>
+                  )}
+
+                  {pushPermission === "denied" && (
+                    <div className="mt-3 space-y-3">
+                      <div className="flex items-start gap-2 rounded-lg bg-red-500/10 border border-red-500/20 p-3">
+                        <AlertTriangle className="h-4 w-4 text-red-400 mt-0.5 flex-shrink-0" />
+                        <div className="flex-1">
+                          <p className="text-sm font-medium text-red-300 mb-1">Permissão Bloqueada</p>
+                          <p className="text-xs text-red-300/80">
+                            Você bloqueou as notificações. Para reativar, siga as instruções abaixo:
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Instruções específicas por navegador */}
+                      <div className="rounded-lg bg-gray-900/50 border border-gray-700 p-4 space-y-3">
+                        <p className="text-sm font-semibold text-white">Como reativar notificações:</p>
+
+                        <div className="space-y-2 text-xs text-gray-300">
+                          <div className="flex items-start gap-2">
+                            <span className="font-semibold text-orange-400 min-w-[80px]">Chrome/Edge:</span>
+                            <span>
+                              Clique no ícone de cadeado 🔒 ao lado da URL → Configurações do site → Notificações →
+                              Permitir
+                            </span>
+                          </div>
+                          <div className="flex items-start gap-2">
+                            <span className="font-semibold text-orange-400 min-w-[80px]">Firefox:</span>
+                            <span>
+                              Clique no ícone de escudo 🛡️ → Configurações → Permissões → Notificações → Permitir
+                            </span>
+                          </div>
+                          <div className="flex items-start gap-2">
+                            <span className="font-semibold text-orange-400 min-w-[80px]">Safari:</span>
+                            <span>Safari → Preferências → Sites → Notificações → Permitir para este site</span>
+                          </div>
+                          <div className="flex items-start gap-2">
+                            <span className="font-semibold text-orange-400 min-w-[80px]">Mobile:</span>
+                            <span>Configurações do celular → Apps → Navegador → Notificações → Permitir</span>
+                          </div>
+                        </div>
+
+                        <div className="pt-2 border-t border-gray-700">
+                          <p className="text-xs text-gray-400">
+                            Após alterar as configurações, recarregue esta página para ativar as notificações.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {pushPermission === "granted" && (
+                    <div className="mt-3 flex items-start gap-2 rounded-lg bg-green-500/10 border border-green-500/20 p-3">
+                      <svg
+                        className="h-4 w-4 text-green-400 mt-0.5 flex-shrink-0"
+                        fill="currentColor"
+                        viewBox="0 0 20 20"
+                      >
+                        <path
+                          fillRule="evenodd"
+                          d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                          clipRule="evenodd"
+                        />
+                      </svg>
+                      <p className="text-sm text-green-300">
+                        Notificações ativadas! Funciona no celular e computador, mesmo com o app fechado.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Botões de ação */}
+              <div className="flex flex-col sm:flex-row gap-2 pt-2">
                 {pushPermission === "granted" ? (
-                  <div className="flex gap-2">
+                  <>
                     <Button
                       type="button"
                       onClick={testNotification}
-                      variant="outline"
-                      size="sm"
                       disabled={isTesting}
-                      className="bg-orange-600 hover:bg-orange-700 text-white border-orange-500"
+                      className="flex-1 bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-700 hover:to-orange-600 text-white shadow-lg shadow-orange-500/20 transition-all hover:scale-105 hover:shadow-orange-500/30"
                     >
                       {isTesting ? (
                         <>
@@ -408,47 +522,73 @@ export function SystemSettings() {
                         </>
                       )}
                     </Button>
-                    <Switch
-                      id="notifications_push"
-                      checked={settings.notifications_push}
-                      onCheckedChange={(checked) => handleInputChange("notifications_push", checked)}
-                    />
-                  </div>
+                    <div className="flex items-center gap-2 sm:ml-auto">
+                      <span className="text-xs text-gray-400">Ativo</span>
+                      <Switch
+                        id="notifications_push"
+                        checked={settings.notifications_push}
+                        onCheckedChange={(checked) => handleInputChange("notifications_push", checked)}
+                        className="data-[state=checked]:bg-green-500"
+                      />
+                    </div>
+                  </>
                 ) : (
                   <Button
                     type="button"
                     onClick={requestPushPermission}
                     disabled={!pushSupported || pushPermission === "denied"}
-                    variant="outline"
-                    size="sm"
+                    className="w-full bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-700 hover:to-orange-600 text-white shadow-lg shadow-orange-500/20 transition-all hover:scale-105 hover:shadow-orange-500/30 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
                   >
-                    Ativar Notificações
+                    <Bell className="mr-2 h-4 w-4" />
+                    {pushPermission === "denied" ? "Bloqueado - Veja instruções acima" : "Ativar Notificações Push"}
                   </Button>
                 )}
               </div>
+            </div>
+          </div>
 
-              <div className="rounded-lg bg-orange-500/10 border border-orange-500/30 p-4">
-                <p className="text-sm text-orange-200">
-                  <strong>Dica:</strong> Adicione o ConstruLoc à tela inicial do seu celular para receber notificações
-                  como um app nativo! As notificações funcionam mesmo com o app fechado.
+          {/* Dica sobre PWA */}
+          <div className="relative overflow-hidden rounded-xl border border-orange-500/30 bg-gradient-to-br from-orange-500/10 to-orange-500/5 p-5">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-orange-500/10 rounded-full blur-3xl" />
+            <div className="relative flex items-start gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-orange-500/20 flex-shrink-0">
+                <Smartphone className="h-5 w-5 text-orange-400" />
+              </div>
+              <div className="flex-1">
+                <p className="text-sm font-semibold text-orange-200 mb-1">💡 Dica: Instale como App</p>
+                <p className="text-sm text-orange-200/80 leading-relaxed">
+                  Adicione o ConstruLoc à tela inicial do seu celular para receber notificações como um app nativo! As
+                  notificações funcionam mesmo com o app fechado.
                   {pushPermission === "granted" && (
-                    <> Use o botão "Testar Notificação" para verificar se está funcionando corretamente.</>
+                    <> Use o botão "Testar Notificação" para verificar se está funcionando.</>
                   )}
                 </p>
               </div>
             </div>
           </div>
 
-          <div className="flex items-center justify-between">
-            <div>
-              <Label htmlFor="auto_backup">Backup Automático</Label>
-              <p className="text-sm text-gray-500">Backup diário dos dados do sistema</p>
+          {/* Backup Automático */}
+          <div className="group relative overflow-hidden rounded-xl border border-gray-700 bg-gray-800/50 p-5 transition-all hover:border-orange-500/50 hover:shadow-lg hover:shadow-orange-500/10">
+            <div className="absolute inset-0 bg-gradient-to-br from-orange-500/5 to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
+            <div className="relative flex items-center justify-between">
+              <div className="flex items-start gap-4">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-purple-500/10 transition-transform group-hover:scale-110">
+                  <Database className="h-5 w-5 text-purple-400" />
+                </div>
+                <div className="flex-1">
+                  <Label htmlFor="auto_backup" className="text-base font-semibold text-white cursor-pointer">
+                    Backup Automático
+                  </Label>
+                  <p className="text-sm text-gray-400 mt-1">Backup diário automático dos dados do sistema</p>
+                </div>
+              </div>
+              <Switch
+                id="auto_backup"
+                checked={settings.auto_backup}
+                onCheckedChange={(checked) => handleInputChange("auto_backup", checked)}
+                className="data-[state=checked]:bg-purple-500"
+              />
             </div>
-            <Switch
-              id="auto_backup"
-              checked={settings.auto_backup}
-              onCheckedChange={(checked) => handleInputChange("auto_backup", checked)}
-            />
           </div>
         </CardContent>
       </Card>
