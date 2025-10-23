@@ -81,13 +81,26 @@ export function ContractCreationForm({ contract, onSuccess }: ContractCreationFo
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState("")
+  const [isLoadingData, setIsLoadingData] = useState(true)
 
   const router = useRouter()
   const supabase = createClient()
 
   useEffect(() => {
-    fetchClients()
-    fetchEquipments()
+    const loadData = async () => {
+      console.log("[v0] Loading contract form data...")
+      setIsLoadingData(true)
+      try {
+        await Promise.all([fetchClients(), fetchEquipments()])
+        console.log("[v0] Contract form data loaded successfully")
+      } catch (error) {
+        console.error("[v0] Error loading contract form data:", error)
+        setError("Erro ao carregar dados. Por favor, recarregue a página.")
+      } finally {
+        setIsLoadingData(false)
+      }
+    }
+    loadData()
   }, [])
 
   useEffect(() => {
@@ -96,36 +109,57 @@ export function ContractCreationForm({ contract, onSuccess }: ContractCreationFo
 
   const fetchClients = async () => {
     try {
+      console.log("[v0] Fetching clients...")
       const { data, error } = await supabase.from("clientes").select("id, nome, empresa, email, telefone").order("nome")
-      if (error) throw error
+
+      if (error) {
+        console.error("[v0] Error fetching clients:", error)
+        throw error
+      }
+
+      console.log("[v0] Clients fetched:", data?.length || 0)
       setClients(data || [])
     } catch (error) {
-      console.error("Error fetching clients:", error)
+      console.error("[v0] Error in fetchClients:", error)
+      throw error
     }
   }
 
   const fetchEquipments = async () => {
     try {
+      console.log("[v0] Fetching equipments...")
       const { data, error } = await supabase
         .from("equipamentos")
         .select(`
           id, nome, marca, modelo, valor_diario, valor_semanal, valor_mensal,
-          imagem_url, categoria_id, status, localizacao, quantidade,
-          categorias_equipamentos(nome)
+          imagem_url, categoria_id, status, localizacao, quantidade
         `)
         .eq("status", "disponivel")
         .order("nome")
 
-      if (error) throw error
+      if (error) {
+        console.error("[v0] Error fetching equipments:", error)
+        throw error
+      }
+
+      console.log("[v0] Equipments fetched:", data?.length || 0)
 
       const equipmentsWithStock = (data || []).map((equipment) => ({
         ...equipment,
+        valor_diario: equipment.valor_diario || 0,
+        valor_semanal: equipment.valor_semanal || 0,
+        valor_mensal: equipment.valor_mensal || 0,
+        quantidade: equipment.quantidade || 0,
         stock_count: equipment.quantidade || 0,
+        marca: equipment.marca || "Sem marca",
+        modelo: equipment.modelo || "Sem modelo",
+        imagem_url: equipment.imagem_url || null,
       }))
 
       setEquipments(equipmentsWithStock)
     } catch (error) {
-      console.error("Error fetching equipments:", error)
+      console.error("[v0] Error in fetchEquipments:", error)
+      throw error
     }
   }
 
@@ -149,38 +183,54 @@ export function ContractCreationForm({ contract, onSuccess }: ContractCreationFo
   }
 
   const addEquipmentToContract = (equipment: Equipment) => {
-    const existingItem = items.find((item) => item.equipamento_id === equipment.id)
+    try {
+      console.log("[v0] Adding equipment to contract:", equipment.id)
+      const existingItem = items.find((item) => item.equipamento_id === equipment.id)
 
-    if (existingItem) {
-      updateItemQuantity(equipment.id, existingItem.quantidade + 1)
-    } else {
-      const newItem: ContractItem = {
-        equipamento_id: equipment.id,
-        equipamento: equipment,
-        quantidade: 1,
-        valor_unitario: equipment.valor_mensal || equipment.valor_diario * 30,
-        valor_total: equipment.valor_mensal || equipment.valor_diario * 30,
+      if (existingItem) {
+        updateItemQuantity(equipment.id, existingItem.quantidade + 1)
+      } else {
+        // Calculate monthly value for new items
+        const monthlyValue = equipment.valor_mensal || equipment.valor_diario * 30 || 0
+        const newItem: ContractItem = {
+          equipamento_id: equipment.id,
+          equipamento: equipment,
+          quantidade: 1,
+          valor_unitario: monthlyValue, // Default to monthly value
+          valor_total: monthlyValue, // Default to monthly value
+        }
+        setItems((prev) => [...prev, newItem])
+        console.log("[v0] Equipment added successfully")
       }
-      setItems((prev) => [...prev, newItem])
+    } catch (error) {
+      console.error("[v0] Error adding equipment:", error)
+      setError("Erro ao adicionar equipamento. Tente novamente.")
     }
   }
 
   const updateItemQuantity = (equipmentId: string, newQuantity: number) => {
-    setItems((prev) =>
-      prev.map((item) => {
-        if (item.equipamento_id === equipmentId) {
-          const quantity = Math.max(1, Math.min(newQuantity, item.equipamento?.stock_count || 1))
-          const monthlyValue = item.equipamento?.valor_mensal || item.valor_unitario
-          return {
-            ...item,
-            quantidade: quantity,
-            valor_unitario: monthlyValue,
-            valor_total: monthlyValue * quantity,
+    try {
+      setItems((prev) =>
+        prev.map((item) => {
+          if (item.equipamento_id === equipmentId) {
+            const maxQuantity = item.equipamento?.stock_count || 1
+            const quantity = Math.max(1, Math.min(newQuantity, maxQuantity))
+            // Recalculate unit and total based on the monthly price set when added
+            const monthlyValue = item.equipamento?.valor_mensal || 0
+            return {
+              ...item,
+              quantidade: quantity,
+              valor_unitario: monthlyValue, // Keep as monthly value
+              valor_total: monthlyValue * quantity,
+            }
           }
-        }
-        return item
-      }),
-    )
+          return item
+        }),
+      )
+    } catch (error) {
+      console.error("[v0] Error updating quantity:", error)
+      setError("Erro ao atualizar quantidade. Tente novamente.")
+    }
   }
 
   const removeItem = (equipmentId: string) => {
@@ -188,7 +238,15 @@ export function ContractCreationForm({ contract, onSuccess }: ContractCreationFo
   }
 
   const calculateTotal = () => {
-    return items.reduce((total, item) => total + item.valor_total, 0)
+    try {
+      return items.reduce((total, item) => {
+        const itemTotal = item.valor_total || 0
+        return total + itemTotal
+      }, 0)
+    } catch (error) {
+      console.error("[v0] Error calculating total:", error)
+      return 0
+    }
   }
 
   const calculateDays = () => {
@@ -215,6 +273,19 @@ export function ContractCreationForm({ contract, onSuccess }: ContractCreationFo
       return { status: "Estoque Baixo", color: "bg-yellow-500", icon: AlertCircle }
     }
     return { status: "Disponível", color: "bg-green-500", icon: CheckCircle2 }
+  }
+
+  const formatEquipmentPrice = (equipment: Equipment) => {
+    if (equipment.valor_mensal && equipment.valor_mensal > 0) {
+      return `R$ ${equipment.valor_mensal.toFixed(2)}/mês`
+    }
+    if (equipment.valor_semanal && equipment.valor_semanal > 0) {
+      return `R$ ${equipment.valor_semanal.toFixed(2)}/sem`
+    }
+    if (equipment.valor_diario && equipment.valor_diario > 0) {
+      return `R$ ${equipment.valor_diario.toFixed(2)}/dia`
+    }
+    return "Sem preço definido"
   }
 
   const validateForm = () => {
@@ -315,12 +386,14 @@ export function ContractCreationForm({ contract, onSuccess }: ContractCreationFo
       let contractId: string
 
       if (contract?.id) {
+        // Editing an existing contract
         const { data: oldItems } = await supabase
           .from("itens_contrato")
           .select("equipamento_id, quantidade")
           .eq("contrato_id", contract.id)
 
         if (oldItems) {
+          // Restore stock for items that are being removed or changed
           for (const oldItem of oldItems) {
             await supabase.rpc("increment_equipment_stock", {
               equipment_id: oldItem.equipamento_id,
@@ -333,8 +406,10 @@ export function ContractCreationForm({ contract, onSuccess }: ContractCreationFo
         if (error) throw error
         contractId = contract.id
 
+        // Delete old items before inserting new ones
         await supabase.from("itens_contrato").delete().eq("contrato_id", contractId)
       } else {
+        // Creating a new contract
         const contractNumber = await generateContractNumber()
 
         const { data, error } = await supabase
@@ -350,21 +425,24 @@ export function ContractCreationForm({ contract, onSuccess }: ContractCreationFo
 
         contractId = data.id
 
+        // Create associated payment entry
         const paymentData = {
           contrato_id: contractId,
           valor: calculateTotal(),
           data_vencimento: formData.data_pagamento,
           status: formData.status_pagamento,
-          forma_pagamento: "A definir",
+          forma_pagamento: "A definir", // Default or based on form
         }
 
         const { error: paymentError } = await supabase.from("pagamentos").insert([paymentData])
 
         if (paymentError) {
           console.error("Error creating payment:", paymentError)
+          // Depending on business logic, you might want to handle this error more robustly
         }
       }
 
+      // Insert new contract items
       const itemsData = items.map((item) => ({
         contrato_id: contractId,
         equipamento_id: item.equipamento_id,
@@ -376,6 +454,7 @@ export function ContractCreationForm({ contract, onSuccess }: ContractCreationFo
       const { error: itemsError } = await supabase.from("itens_contrato").insert(itemsData)
       if (itemsError) throw itemsError
 
+      // Update equipment stock
       for (const item of items) {
         const { error: stockError } = await supabase.rpc("decrement_equipment_stock", {
           equipment_id: item.equipamento_id,
@@ -384,6 +463,7 @@ export function ContractCreationForm({ contract, onSuccess }: ContractCreationFo
 
         if (stockError) {
           console.error("Error updating equipment stock:", stockError)
+          // Consider error handling for stock update failures
         }
       }
 
@@ -398,6 +478,18 @@ export function ContractCreationForm({ contract, onSuccess }: ContractCreationFo
     } finally {
       setIsLoading(false)
     }
+  }
+
+  if (isLoadingData) {
+    return (
+      <div className="min-h-screen bg-gray-900 p-4 md:p-6 flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="h-12 w-12 animate-spin text-orange-500 mx-auto mb-4" />
+          <p className="text-white text-lg">Carregando dados do formulário...</p>
+          <p className="text-gray-400 text-sm mt-2">Por favor, aguarde</p>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -708,29 +800,28 @@ export function ContractCreationForm({ contract, onSuccess }: ContractCreationFo
             </Card>
 
             <Card className="bg-gray-800 border-gray-700">
-              <CardContent className="p-6">
-                <h2 className="text-orange-500 text-lg font-semibold mb-4">Equipamentos Disponíveis</h2>
+              <CardContent className="p-4 md:p-6">
+                <h2 className="text-orange-500 text-lg md:text-xl font-semibold mb-4">Equipamentos Disponíveis</h2>
 
                 {/* Search Bar */}
                 <div className="mb-4">
                   <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 md:h-4 md:w-4 text-gray-400" />
                     <Input
                       placeholder="Buscar equipamentos..."
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
-                      className="pl-10 bg-gray-700 border-gray-600 text-white h-11"
+                      className="pl-10 bg-gray-700 border-gray-600 text-white h-12 md:h-11 text-base"
                     />
                   </div>
                 </div>
 
-                {/* Equipment List */}
-                <div className="space-y-3 max-h-[600px] overflow-y-auto pr-2">
+                <div className="space-y-4 max-h-[600px] overflow-y-auto pr-2">
                   {filteredEquipments.length > 0 ? (
                     filteredEquipments.map((equipment) => {
                       const addedItem = items.find((item) => item.equipamento_id === equipment.id)
                       const addedQuantity = addedItem ? addedItem.quantidade : 0
-                      const remainingStock = (equipment.stock_count || 0) - addedQuantity
+                      const remainingStock = Math.max(0, (equipment.stock_count || 0) - addedQuantity)
                       const isFullyAdded = remainingStock <= 0
 
                       const availability = getAvailabilityStatus(equipment.stock_count)
@@ -739,53 +830,62 @@ export function ContractCreationForm({ contract, onSuccess }: ContractCreationFo
                       return (
                         <div
                           key={equipment.id}
-                          className={`flex items-center gap-3 rounded-lg p-3 border transition-all ${
+                          className={`rounded-lg p-4 border-2 transition-all ${
                             addedItem
                               ? "bg-orange-900/20 border-orange-500"
                               : "bg-gray-700 border-gray-600 hover:border-orange-500"
                           }`}
                         >
-                          <div className="w-12 h-12 bg-gray-600 rounded-lg overflow-hidden flex-shrink-0">
-                            {equipment.imagem_url ? (
-                              <Image
-                                src={equipment.imagem_url || "/placeholder.svg"}
-                                alt={equipment.nome}
-                                width={48}
-                                height={48}
-                                className="w-full h-full object-cover"
-                              />
-                            ) : (
-                              <div className="w-full h-full flex items-center justify-center">
-                                <Package className="h-5 w-5 text-gray-400" />
-                              </div>
-                            )}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-white font-medium text-sm truncate">{equipment.nome}</p>
-                            <p className="text-gray-400 text-xs">
-                              {equipment.marca} • R$ {equipment.valor_diario.toFixed(2)}/dia
-                            </p>
-                            <div className="flex items-center gap-2 mt-1 flex-wrap">
-                              <Badge
-                                variant="secondary"
-                                className={`${availability.color} text-white text-xs px-2 py-0 h-5`}
-                              >
-                                <StatusIcon className="h-3 w-3 mr-1" />
-                                {availability.status}
-                              </Badge>
-                              <span className="text-xs text-gray-400">
-                                {remainingStock} disponível
-                                {addedQuantity > 0 && (
-                                  <span className="text-orange-400"> • {addedQuantity} adicionado</span>
-                                )}
-                              </span>
+                          <div className="flex items-start gap-3 mb-3">
+                            <div className="w-16 h-16 md:w-14 md:h-14 bg-gray-600 rounded-lg overflow-hidden flex-shrink-0">
+                              {equipment.imagem_url ? (
+                                <Image
+                                  src={equipment.imagem_url || "/placeholder.svg"}
+                                  alt={equipment.nome}
+                                  width={64}
+                                  height={64}
+                                  className="w-full h-full object-cover"
+                                />
+                              ) : (
+                                <div className="w-full h-full flex items-center justify-center">
+                                  <Package className="h-7 w-7 md:h-6 md:w-6 text-gray-400" />
+                                </div>
+                              )}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-white font-semibold text-base md:text-sm leading-tight mb-1">
+                                {equipment.nome}
+                              </p>
+                              <p className="text-gray-400 text-sm md:text-xs mb-2">{equipment.marca}</p>
+                              <p className="text-orange-400 font-bold text-base md:text-sm">
+                                {formatEquipmentPrice(equipment)}
+                              </p>
                             </div>
                           </div>
+
+                          <div className="flex flex-wrap items-center gap-2 mb-3">
+                            <Badge
+                              variant="secondary"
+                              className={`${availability.color} text-white text-sm md:text-xs px-3 py-1 md:px-2 md:py-0 h-7 md:h-5`}
+                            >
+                              <StatusIcon className="h-4 w-4 md:h-3 md:w-3 mr-1" />
+                              {availability.status}
+                            </Badge>
+                            <span className="text-sm md:text-xs text-gray-300 font-medium">
+                              {remainingStock} disponível
+                            </span>
+                            {addedQuantity > 0 && (
+                              <span className="text-sm md:text-xs text-orange-400 font-medium">
+                                • {addedQuantity} selecionado
+                              </span>
+                            )}
+                          </div>
+
                           <Button
                             type="button"
                             onClick={() => addEquipmentToContract(equipment)}
                             disabled={isFullyAdded}
-                            className={`h-9 px-4 text-sm flex-shrink-0 ${
+                            className={`w-full h-12 md:h-10 text-base md:text-sm font-semibold ${
                               isFullyAdded
                                 ? "bg-gray-600 text-gray-400 cursor-not-allowed"
                                 : addedItem
@@ -801,7 +901,7 @@ export function ContractCreationForm({ contract, onSuccess }: ContractCreationFo
                   ) : (
                     <div className="text-center py-12 text-gray-400">
                       <Package className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                      <p>Nenhum equipamento encontrado</p>
+                      <p className="text-base">Nenhum equipamento encontrado</p>
                     </div>
                   )}
                 </div>
