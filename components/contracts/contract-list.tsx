@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -72,8 +73,6 @@ export function ContractList() {
     contractId: null,
     contractNumber: "",
   })
-  const [openMenuId, setOpenMenuId] = useState<string | null>(null)
-  const menuRef = useRef<HTMLDivElement>(null)
   const supabase = createClient()
   const { toast } = useToast()
 
@@ -84,19 +83,6 @@ export function ContractList() {
   useEffect(() => {
     filterContracts()
   }, [contracts, searchTerm, statusFilter])
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-        setOpenMenuId(null)
-      }
-    }
-
-    if (openMenuId) {
-      document.addEventListener("mousedown", handleClickOutside)
-      return () => document.removeEventListener("mousedown", handleClickOutside)
-    }
-  }, [openMenuId])
 
   const fetchContracts = async () => {
     try {
@@ -219,7 +205,7 @@ export function ContractList() {
       const { data: contractItems, error: fetchError } = await supabase
         .from("itens_contrato")
         .select(`
-          equipamento_id, 
+          equipamento_id,
           quantidade,
           equipamentos (
             nome,
@@ -371,8 +357,6 @@ export function ContractList() {
 
   const handleDownloadPDF = async (contractId: string, contractNumber: string) => {
     try {
-      console.log("[v0] Downloading PDF for contract:", contractId, contractNumber)
-
       toast({
         title: "Gerando PDF...",
         description: "Por favor, aguarde enquanto o relatório é gerado.",
@@ -380,16 +364,11 @@ export function ContractList() {
 
       const response = await fetch(`/api/contracts/${contractId}/pdf`)
 
-      console.log("[v0] PDF API response status:", response.status)
-
       if (!response.ok) {
-        const errorText = await response.text()
-        console.error("[v0] PDF API error:", errorText)
         throw new Error("Erro ao gerar PDF")
       }
 
       const blob = await response.blob()
-      console.log("[v0] PDF blob size:", blob.size)
 
       const url = window.URL.createObjectURL(blob)
       const a = document.createElement("a")
@@ -405,7 +384,7 @@ export function ContractList() {
         description: `Relatório do contrato ${contractNumber} baixado com sucesso.`,
       })
     } catch (error) {
-      console.error("[v0] Error downloading PDF:", error)
+      console.error("Error downloading PDF:", error)
       toast({
         title: "Erro ao gerar PDF",
         description: "Não foi possível gerar o relatório. Tente novamente.",
@@ -466,7 +445,7 @@ export function ContractList() {
               </Select>
             </div>
 
-            <div className="hidden md:block rounded-md border border-slate-700 overflow-x-auto">
+            <div className="hidden md:block rounded-md border border-slate-700">
               <Table>
                 <TableHeader>
                   <TableRow className="border-slate-700 hover:bg-slate-700/50">
@@ -510,75 +489,56 @@ export function ContractList() {
                           <Badge className={getStatusColor(contract.status)}>{getStatusLabel(contract.status)}</Badge>
                         </TableCell>
                         <TableCell>
-                          <div className="relative" ref={openMenuId === contract.id ? menuRef : null}>
-                            <Button
-                              variant="ghost"
-                              className="h-8 w-8 p-0 text-slate-400 hover:text-white"
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                setOpenMenuId(openMenuId === contract.id ? null : contract.id)
-                              }}
-                            >
-                              <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                            {openMenuId === contract.id && (
-                              <div
-                                className="absolute right-0 top-full mt-1 w-44 rounded-md border border-gray-700 bg-gray-800 shadow-lg"
-                                style={{ zIndex: 10000 }}
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                className="h-8 w-8 p-0 text-slate-400 hover:text-white hover:bg-slate-700"
                               >
-                                <div className="py-1">
-                                  <Link
-                                    href={`/contratos/${contract.id}`}
-                                    className="flex items-center px-4 py-2 text-sm text-gray-200 hover:bg-gray-700 transition-colors"
-                                    onClick={() => setOpenMenuId(null)}
-                                  >
-                                    <Eye className="mr-2 h-4 w-4" />
-                                    Ver detalhes
-                                  </Link>
-                                  <Link
-                                    href={`/contratos/${contract.id}/editar`}
-                                    className="flex items-center px-4 py-2 text-sm text-gray-200 hover:bg-gray-700 transition-colors"
-                                    onClick={() => setOpenMenuId(null)}
-                                  >
-                                    <Edit className="mr-2 h-4 w-4" />
-                                    Editar
-                                  </Link>
-                                  <button
-                                    onClick={() => {
-                                      setOpenMenuId(null)
-                                      handleDownloadPDF(contract.id, contract.numero_contrato)
-                                    }}
-                                    className="flex items-center w-full px-4 py-2 text-sm text-gray-200 hover:bg-gray-700 transition-colors"
-                                  >
-                                    <Download className="mr-2 h-4 w-4" />
-                                    Baixar PDF
-                                  </button>
-                                  {contract.status !== "cancelado" && contract.status !== "finalizado" && (
-                                    <button
-                                      onClick={() => {
-                                        setOpenMenuId(null)
-                                        handleCancelClick(contract.id, contract.numero_contrato)
-                                      }}
-                                      className="flex items-center w-full px-4 py-2 text-sm text-yellow-400 hover:bg-gray-700 transition-colors"
-                                    >
-                                      <XCircle className="mr-2 h-4 w-4" />
-                                      Cancelar
-                                    </button>
-                                  )}
-                                  <button
-                                    onClick={() => {
-                                      setOpenMenuId(null)
-                                      handleDeleteClick(contract.id, contract.numero_contrato)
-                                    }}
-                                    className="flex items-center w-full px-4 py-2 text-sm text-red-400 hover:bg-gray-700 transition-colors"
-                                  >
-                                    <Trash2 className="mr-2 h-4 w-4" />
-                                    Excluir
-                                  </button>
-                                </div>
-                              </div>
-                            )}
-                          </div>
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-48">
+                              <DropdownMenuItem asChild>
+                                <Link href={`/contratos/${contract.id}`} className="flex items-center cursor-pointer">
+                                  <Eye className="mr-2 h-4 w-4" />
+                                  Ver detalhes
+                                </Link>
+                              </DropdownMenuItem>
+                              <DropdownMenuItem asChild>
+                                <Link
+                                  href={`/contratos/${contract.id}/editar`}
+                                  className="flex items-center cursor-pointer"
+                                >
+                                  <Edit className="mr-2 h-4 w-4" />
+                                  Editar
+                                </Link>
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => handleDownloadPDF(contract.id, contract.numero_contrato)}
+                                className="cursor-pointer"
+                              >
+                                <Download className="mr-2 h-4 w-4" />
+                                Baixar PDF
+                              </DropdownMenuItem>
+                              {contract.status !== "cancelado" && contract.status !== "finalizado" && (
+                                <DropdownMenuItem
+                                  onClick={() => handleCancelClick(contract.id, contract.numero_contrato)}
+                                  className="text-yellow-400 focus:text-yellow-400 cursor-pointer"
+                                >
+                                  <XCircle className="mr-2 h-4 w-4" />
+                                  Cancelar
+                                </DropdownMenuItem>
+                              )}
+                              <DropdownMenuItem
+                                onClick={() => handleDeleteClick(contract.id, contract.numero_contrato)}
+                                className="text-red-400 focus:text-red-400 cursor-pointer"
+                              >
+                                <Trash2 className="mr-2 h-4 w-4" />
+                                Excluir
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
                         </TableCell>
                       </TableRow>
                     ))
@@ -602,75 +562,56 @@ export function ContractList() {
                             <div className="text-sm text-slate-400">{contract.clientes.empresa}</div>
                           )}
                         </div>
-                        <div className="relative" ref={openMenuId === contract.id ? menuRef : null}>
-                          <Button
-                            variant="ghost"
-                            className="h-8 w-8 p-0 text-slate-400 hover:text-white"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              setOpenMenuId(openMenuId === contract.id ? null : contract.id)
-                            }}
-                          >
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                          {openMenuId === contract.id && (
-                            <div
-                              className="absolute right-0 top-full mt-1 w-44 rounded-md border border-gray-700 bg-gray-800 shadow-lg"
-                              style={{ zIndex: 10000 }}
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              className="h-8 w-8 p-0 text-slate-400 hover:text-white hover:bg-slate-700"
                             >
-                              <div className="py-1">
-                                <Link
-                                  href={`/contratos/${contract.id}`}
-                                  className="flex items-center px-4 py-2 text-sm text-gray-200 hover:bg-gray-700 transition-colors"
-                                  onClick={() => setOpenMenuId(null)}
-                                >
-                                  <Eye className="mr-2 h-4 w-4" />
-                                  Ver detalhes
-                                </Link>
-                                <Link
-                                  href={`/contratos/${contract.id}/editar`}
-                                  className="flex items-center px-4 py-2 text-sm text-gray-200 hover:bg-gray-700 transition-colors"
-                                  onClick={() => setOpenMenuId(null)}
-                                >
-                                  <Edit className="mr-2 h-4 w-4" />
-                                  Editar
-                                </Link>
-                                <button
-                                  onClick={() => {
-                                    setOpenMenuId(null)
-                                    handleDownloadPDF(contract.id, contract.numero_contrato)
-                                  }}
-                                  className="flex items-center w-full px-4 py-2 text-sm text-gray-200 hover:bg-gray-700 transition-colors"
-                                >
-                                  <Download className="mr-2 h-4 w-4" />
-                                  Baixar PDF
-                                </button>
-                                {contract.status !== "cancelado" && contract.status !== "finalizado" && (
-                                  <button
-                                    onClick={() => {
-                                      setOpenMenuId(null)
-                                      handleCancelClick(contract.id, contract.numero_contrato)
-                                    }}
-                                    className="flex items-center w-full px-4 py-2 text-sm text-yellow-400 hover:bg-gray-700 transition-colors"
-                                  >
-                                    <XCircle className="mr-2 h-4 w-4" />
-                                    Cancelar
-                                  </button>
-                                )}
-                                <button
-                                  onClick={() => {
-                                    setOpenMenuId(null)
-                                    handleDeleteClick(contract.id, contract.numero_contrato)
-                                  }}
-                                  className="flex items-center w-full px-4 py-2 text-sm text-red-400 hover:bg-gray-700 transition-colors"
-                                >
-                                  <Trash2 className="mr-2 h-4 w-4" />
-                                  Excluir
-                                </button>
-                              </div>
-                            </div>
-                          )}
-                        </div>
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-48">
+                            <DropdownMenuItem asChild>
+                              <Link href={`/contratos/${contract.id}`} className="flex items-center cursor-pointer">
+                                <Eye className="mr-2 h-4 w-4" />
+                                Ver detalhes
+                              </Link>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem asChild>
+                              <Link
+                                href={`/contratos/${contract.id}/editar`}
+                                className="flex items-center cursor-pointer"
+                              >
+                                <Edit className="mr-2 h-4 w-4" />
+                                Editar
+                              </Link>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => handleDownloadPDF(contract.id, contract.numero_contrato)}
+                              className="cursor-pointer"
+                            >
+                              <Download className="mr-2 h-4 w-4" />
+                              Baixar PDF
+                            </DropdownMenuItem>
+                            {contract.status !== "cancelado" && contract.status !== "finalizado" && (
+                              <DropdownMenuItem
+                                onClick={() => handleCancelClick(contract.id, contract.numero_contrato)}
+                                className="text-yellow-400 focus:text-yellow-400 cursor-pointer"
+                              >
+                                <XCircle className="mr-2 h-4 w-4" />
+                                Cancelar
+                              </DropdownMenuItem>
+                            )}
+                            <DropdownMenuItem
+                              onClick={() => handleDeleteClick(contract.id, contract.numero_contrato)}
+                              className="text-red-400 focus:text-red-400 cursor-pointer"
+                            >
+                              <Trash2 className="mr-2 h-4 w-4" />
+                              Excluir
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </div>
                       <div className="space-y-2 text-sm">
                         <div className="flex justify-between">

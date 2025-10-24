@@ -19,8 +19,9 @@ import {
   AlertCircle,
   XCircle,
   MapPin,
-  DollarSign,
   Calendar,
+  DollarSign,
+  Edit2,
 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import Image from "next/image"
@@ -67,11 +68,13 @@ export function ContractCreationForm({ contract, onSuccess }: ContractCreationFo
     cliente_id: contract?.cliente_id || "",
     data_inicio: contract?.data_inicio || "",
     data_fim: contract?.data_fim || "",
-    data_pagamento: contract?.data_pagamento || "",
+    data_vencimento_pagamento: contract?.data_inicio || "",
     status: contract?.status || "pendente",
     status_pagamento: "pendente",
     observacoes: contract?.observacoes || "",
     endereco_instalacao: contract?.endereco_instalacao || "",
+    valor_total_manual: contract?.valor_total || 0,
+    usar_valor_manual: false,
   })
 
   const [items, setItems] = useState<ContractItem[]>(contract?.itens_contrato || [])
@@ -85,6 +88,19 @@ export function ContractCreationForm({ contract, onSuccess }: ContractCreationFo
 
   const router = useRouter()
   const supabase = createClient()
+
+  useEffect(() => {
+    if (contract?.valor_total && items.length > 0) {
+      const calculatedTotal = items.reduce((total, item) => total + (item.valor_total || 0), 0)
+      if (Math.abs(contract.valor_total - calculatedTotal) > 0.01) {
+        setFormData((prev) => ({
+          ...prev,
+          usar_valor_manual: true,
+          valor_total_manual: contract.valor_total,
+        }))
+      }
+    }
+  }, [contract, items])
 
   useEffect(() => {
     const loadData = async () => {
@@ -178,7 +194,7 @@ export function ContractCreationForm({ contract, onSuccess }: ContractCreationFo
     setFilteredEquipments(filtered)
   }
 
-  const handleInputChange = (field: string, value: string | number) => {
+  const handleInputChange = (field: string, value: string | number | boolean) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
   }
 
@@ -239,6 +255,10 @@ export function ContractCreationForm({ contract, onSuccess }: ContractCreationFo
 
   const calculateTotal = () => {
     try {
+      if (formData.usar_valor_manual) {
+        return formData.valor_total_manual
+      }
+
       return items.reduce((total, item) => {
         const itemTotal = item.valor_total || 0
         return total + itemTotal
@@ -372,15 +392,18 @@ export function ContractCreationForm({ contract, onSuccess }: ContractCreationFo
     }
 
     try {
+      const valorTotal = calculateTotal()
+
+      console.log("[v0] Saving contract with valor_total:", valorTotal)
+
       const contractData = {
         cliente_id: formData.cliente_id,
         data_inicio: formData.data_inicio,
         data_fim: formData.data_fim,
-        data_pagamento: formData.data_pagamento,
         status: formData.status,
         observacoes: formData.observacoes,
         endereco_instalacao: formData.endereco_instalacao,
-        valor_total: calculateTotal(),
+        valor_total: valorTotal,
       }
 
       let contractId: string
@@ -408,6 +431,14 @@ export function ContractCreationForm({ contract, onSuccess }: ContractCreationFo
 
         // Delete old items before inserting new ones
         await supabase.from("itens_contrato").delete().eq("contrato_id", contractId)
+
+        await supabase
+          .from("pagamentos")
+          .update({
+            valor: valorTotal,
+            data_vencimento: formData.data_vencimento_pagamento || formData.data_inicio,
+          })
+          .eq("contrato_id", contractId)
       } else {
         // Creating a new contract
         const contractNumber = await generateContractNumber()
@@ -428,17 +459,16 @@ export function ContractCreationForm({ contract, onSuccess }: ContractCreationFo
         // Create associated payment entry
         const paymentData = {
           contrato_id: contractId,
-          valor: calculateTotal(),
-          data_vencimento: formData.data_pagamento,
+          valor: valorTotal,
+          data_vencimento: formData.data_vencimento_pagamento || formData.data_inicio,
           status: formData.status_pagamento,
-          forma_pagamento: "A definir", // Default or based on form
+          forma_pagamento: "A definir",
         }
 
         const { error: paymentError } = await supabase.from("pagamentos").insert([paymentData])
 
         if (paymentError) {
           console.error("Error creating payment:", paymentError)
-          // Depending on business logic, you might want to handle this error more robustly
         }
       }
 
@@ -447,8 +477,8 @@ export function ContractCreationForm({ contract, onSuccess }: ContractCreationFo
         contrato_id: contractId,
         equipamento_id: item.equipamento_id,
         quantidade: item.quantidade,
-        valor_unitario: item.valor_unitario, // This is now the monthly unit price
-        valor_total: item.valor_total, // This is the total for this item over the contract duration
+        valor_unitario: item.valor_unitario,
+        valor_total: item.valor_total,
       }))
 
       const { error: itemsError } = await supabase.from("itens_contrato").insert(itemsData)
@@ -463,7 +493,6 @@ export function ContractCreationForm({ contract, onSuccess }: ContractCreationFo
 
         if (stockError) {
           console.error("Error updating equipment stock:", stockError)
-          // Consider error handling for stock update failures
         }
       }
 
@@ -554,7 +583,15 @@ export function ContractCreationForm({ contract, onSuccess }: ContractCreationFo
                       id="data_inicio"
                       type="date"
                       value={formData.data_inicio}
-                      onChange={(e) => handleInputChange("data_inicio", e.target.value)}
+                      onChange={(e) => {
+                        handleInputChange("data_inicio", e.target.value)
+                        if (
+                          !formData.data_vencimento_pagamento ||
+                          formData.data_vencimento_pagamento === formData.data_inicio
+                        ) {
+                          handleInputChange("data_vencimento_pagamento", e.target.value)
+                        }
+                      }}
                       className="bg-gray-700 border-gray-600 text-white h-12 md:h-11 text-base"
                       required
                     />
@@ -577,18 +614,19 @@ export function ContractCreationForm({ contract, onSuccess }: ContractCreationFo
 
                   <div className="space-y-2">
                     <Label
-                      htmlFor="data_pagamento"
+                      htmlFor="data_vencimento_pagamento"
                       className="text-gray-300 text-base md:text-sm flex items-center gap-2"
                     >
                       <DollarSign className="h-5 w-5 md:h-4 md:w-4 text-orange-500" />
-                      Data de Pagamento
+                      Data de Vencimento do Pagamento
                     </Label>
                     <Input
-                      id="data_pagamento"
+                      id="data_vencimento_pagamento"
                       type="date"
-                      value={formData.data_pagamento}
-                      onChange={(e) => handleInputChange("data_pagamento", e.target.value)}
+                      value={formData.data_vencimento_pagamento}
+                      onChange={(e) => handleInputChange("data_vencimento_pagamento", e.target.value)}
                       className="bg-gray-700 border-gray-600 text-white h-12 md:h-11 text-base"
+                      required
                     />
                     <p className="text-sm md:text-xs text-gray-500">Notificação será enviada 5 dias antes desta data</p>
                   </div>
@@ -639,13 +677,53 @@ export function ContractCreationForm({ contract, onSuccess }: ContractCreationFo
                   </div>
 
                   <div className="space-y-2">
-                    <Label className="text-gray-300 text-base md:text-sm">Valor Total (R$)</Label>
-                    <div className="bg-gray-700 border border-gray-600 rounded-lg p-4">
-                      <p className="text-4xl md:text-3xl font-bold text-white">R$ {calculateTotal().toFixed(2)}</p>
-                      <p className="text-sm md:text-xs text-gray-400 mt-1">
-                        Calculado com base nos equipamentos selecionados
-                      </p>
+                    <div className="flex items-center justify-between">
+                      <Label className="text-gray-300 text-base md:text-sm">Valor Total (R$)</Label>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          const novoValor = !formData.usar_valor_manual
+                          if (novoValor) {
+                            const calculatedTotal = items.reduce((total, item) => total + (item.valor_total || 0), 0)
+                            handleInputChange("valor_total_manual", calculatedTotal)
+                          }
+                          handleInputChange("usar_valor_manual", novoValor)
+                        }}
+                        className="text-orange-500 hover:text-orange-400 hover:bg-gray-700 h-8 text-xs"
+                      >
+                        <Edit2 className="h-3 w-3 mr-1" />
+                        {formData.usar_valor_manual ? "Automático" : "Editar"}
+                      </Button>
                     </div>
+
+                    {formData.usar_valor_manual ? (
+                      <div className="space-y-2">
+                        <Input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          value={formData.valor_total_manual}
+                          onChange={(e) =>
+                            handleInputChange("valor_total_manual", Number.parseFloat(e.target.value) || 0)
+                          }
+                          className="bg-gray-700 border-gray-600 text-white h-12 md:h-11 text-base"
+                          placeholder="0.00"
+                        />
+                        <p className="text-sm md:text-xs text-orange-400">
+                          Modo manual ativado. Valor calculado: R${" "}
+                          {items.reduce((total, item) => total + (item.valor_total || 0), 0).toFixed(2)}
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="bg-gray-700 border border-gray-600 rounded-lg p-4">
+                        <p className="text-4xl md:text-3xl font-bold text-white">R$ {calculateTotal().toFixed(2)}</p>
+                        <p className="text-sm md:text-xs text-gray-400 mt-1">
+                          Calculado com base nos equipamentos selecionados
+                        </p>
+                      </div>
+                    )}
                   </div>
 
                   <div className="space-y-2">

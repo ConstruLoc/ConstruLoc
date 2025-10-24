@@ -1,7 +1,10 @@
 import { notFound } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
-import { Header } from "@/components/layout/header"
+import { Sidebar } from "@/components/layout/sidebar"
 import { ContractCreationForm } from "@/components/contracts/contract-creation-form"
+import { Button } from "@/components/ui/button"
+import { ArrowLeft } from "lucide-react"
+import Link from "next/link"
 
 export default async function EditContractPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -46,10 +49,25 @@ export default async function EditContractPage({ params }: { params: Promise<{ i
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 py-8 space-y-8">
-        <Header title="Editar Contrato" />
-        <ContractCreationForm contract={contractWithItems} />
+    <div className="flex min-h-screen w-full bg-background">
+      <Sidebar />
+      <div className="flex-1 flex flex-col">
+        <div className="container mx-auto px-4 py-8 space-y-8">
+          <div className="flex items-center gap-4">
+            <Button
+              asChild
+              variant="ghost"
+              size="sm"
+              className="text-orange-500 hover:text-orange-600 hover:bg-orange-500/10"
+            >
+              <Link href="/contratos">
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Voltar para Contratos
+              </Link>
+            </Button>
+          </div>
+          <ContractCreationForm contract={contractWithItems} />
+        </div>
       </div>
     </div>
   )
