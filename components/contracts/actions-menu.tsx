@@ -31,29 +31,51 @@ export function ActionsMenu({
 
   useEffect(() => {
     if (isOpen && buttonRef.current) {
-      const rect = buttonRef.current.getBoundingClientRect()
-      const menuWidth = 192 // w-48 = 12rem = 192px
-      const menuHeight = 200 // Approximate height
+      requestAnimationFrame(() => {
+        if (!buttonRef.current) return
 
-      // Calculate position
-      let top = rect.bottom + 4 // 4px spacing
-      let left = rect.right - menuWidth // Align right edge with button
+        const rect = buttonRef.current.getBoundingClientRect()
+        console.log("[v0] Button rect:", {
+          top: rect.top,
+          bottom: rect.bottom,
+          left: rect.left,
+          right: rect.right,
+          width: rect.width,
+          height: rect.height,
+        })
+        console.log("[v0] Window size:", {
+          width: window.innerWidth,
+          height: window.innerHeight,
+        })
 
-      // Adjust if menu goes off screen
-      if (left < 8) left = 8 // Min 8px from left edge
-      if (left + menuWidth > window.innerWidth - 8) {
-        left = window.innerWidth - menuWidth - 8
-      }
+        const menuWidth = 192 // w-48 = 12rem = 192px
+        const menuHeight = 240 // Approximate height with all options
 
-      if (top + menuHeight > window.innerHeight - 8) {
-        top = rect.top - menuHeight - 4 // Show above button if no space below
-      }
+        let top = rect.bottom + 4 // 4px spacing below button
+        let left = rect.right - menuWidth // Align right edge of menu with right edge of button
 
-      setMenuPosition({ top, left })
+        console.log("[v0] Initial position:", { top, left })
+
+        if (left < 8) {
+          left = 8 // Min 8px from left edge
+          console.log("[v0] Adjusted left (too far left):", left)
+        }
+        if (left + menuWidth > window.innerWidth - 8) {
+          left = window.innerWidth - menuWidth - 8
+          console.log("[v0] Adjusted left (too far right):", left)
+        }
+
+        if (top + menuHeight > window.innerHeight - 8) {
+          top = rect.top - menuHeight - 4 // Show above button if no space below
+          console.log("[v0] Adjusted top (show above):", top)
+        }
+
+        console.log("[v0] Final position:", { top, left })
+        setMenuPosition({ top, left })
+      })
     }
   }, [isOpen])
 
-  // Close menu when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
@@ -80,8 +102,8 @@ export function ActionsMenu({
   const handleToggle = (e: React.MouseEvent) => {
     e.preventDefault()
     e.stopPropagation()
-    setIsOpen(!isOpen)
     console.log("[v0] ActionsMenu toggled:", !isOpen, "for contract:", contractNumber)
+    setIsOpen(!isOpen)
   }
 
   const handleAction = (action: () => void) => {
