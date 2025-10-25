@@ -489,11 +489,23 @@ export function ContractList() {
                           <Badge className={getStatusColor(contract.status)}>{getStatusLabel(contract.status)}</Badge>
                         </TableCell>
                         <TableCell>
-                          <DropdownMenu>
+                          <DropdownMenu
+                            onOpenChange={(open) => {
+                              console.log(
+                                "[v0] DropdownMenu state changed:",
+                                open,
+                                "Contract:",
+                                contract.numero_contrato,
+                              )
+                            }}
+                          >
                             <DropdownMenuTrigger asChild>
                               <Button
                                 variant="ghost"
                                 className="h-8 w-8 p-0 text-slate-400 hover:text-white hover:bg-slate-700"
+                                onClick={() => {
+                                  console.log("[v0] Trigger clicked for contract:", contract.numero_contrato)
+                                }}
                               >
                                 <MoreHorizontal className="h-4 w-4" />
                               </Button>
@@ -562,11 +574,23 @@ export function ContractList() {
                             <div className="text-sm text-slate-400">{contract.clientes.empresa}</div>
                           )}
                         </div>
-                        <DropdownMenu>
+                        <DropdownMenu
+                          onOpenChange={(open) => {
+                            console.log(
+                              "[v0] Mobile DropdownMenu state changed:",
+                              open,
+                              "Contract:",
+                              contract.numero_contrato,
+                            )
+                          }}
+                        >
                           <DropdownMenuTrigger asChild>
                             <Button
                               variant="ghost"
                               className="h-8 w-8 p-0 text-slate-400 hover:text-white hover:bg-slate-700"
+                              onClick={() => {
+                                console.log("[v0] Mobile trigger clicked for contract:", contract.numero_contrato)
+                              }}
                             >
                               <MoreHorizontal className="h-4 w-4" />
                             </Button>
