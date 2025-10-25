@@ -455,7 +455,9 @@ export function ContractList() {
                     </TableRow>
                   ) : (
                     filteredContracts.map((contract) => (
-                      <TableRow key={contract.id} className="border-slate-700 hover:bg-slate-700/50">
+                      <TableRow style={{
+                        position: "relative",
+                      }} key={contract.id} className="border-slate-700 hover:bg-slate-700/50">
                         <TableCell className="font-medium text-orange-400">{contract.numero_contrato}</TableCell>
                         <TableCell>
                           <div>
