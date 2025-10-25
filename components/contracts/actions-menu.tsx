@@ -25,56 +25,8 @@ export function ActionsMenu({
   onDownloadPDF,
 }: ActionsMenuProps) {
   const [isOpen, setIsOpen] = useState(false)
-  const [menuPosition, setMenuPosition] = useState({ top: 0, left: 0 })
   const menuRef = useRef<HTMLDivElement>(null)
   const buttonRef = useRef<HTMLButtonElement>(null)
-
-  useEffect(() => {
-    if (isOpen && buttonRef.current) {
-      requestAnimationFrame(() => {
-        if (!buttonRef.current) return
-
-        const rect = buttonRef.current.getBoundingClientRect()
-        console.log("[v0] Button rect:", {
-          top: rect.top,
-          bottom: rect.bottom,
-          left: rect.left,
-          right: rect.right,
-          width: rect.width,
-          height: rect.height,
-        })
-        console.log("[v0] Window size:", {
-          width: window.innerWidth,
-          height: window.innerHeight,
-        })
-
-        const menuWidth = 192 // w-48 = 12rem = 192px
-        const menuHeight = 240 // Approximate height with all options
-
-        let top = rect.bottom + 4 // 4px spacing below button
-        let left = rect.right - menuWidth // Align right edge of menu with right edge of button
-
-        console.log("[v0] Initial position:", { top, left })
-
-        if (left < 8) {
-          left = 8 // Min 8px from left edge
-          console.log("[v0] Adjusted left (too far left):", left)
-        }
-        if (left + menuWidth > window.innerWidth - 8) {
-          left = window.innerWidth - menuWidth - 8
-          console.log("[v0] Adjusted left (too far right):", left)
-        }
-
-        if (top + menuHeight > window.innerHeight - 8) {
-          top = rect.top - menuHeight - 4 // Show above button if no space below
-          console.log("[v0] Adjusted top (show above):", top)
-        }
-
-        console.log("[v0] Final position:", { top, left })
-        setMenuPosition({ top, left })
-      })
-    }
-  }, [isOpen])
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -112,7 +64,7 @@ export function ActionsMenu({
   }
 
   return (
-    <div className="relative">
+    <div className="relative inline-block">
       <Button
         ref={buttonRef}
         variant="ghost"
@@ -125,11 +77,7 @@ export function ActionsMenu({
       {isOpen && (
         <div
           ref={menuRef}
-          className="fixed w-48 bg-slate-800 border border-slate-700 rounded-md shadow-lg z-[9999] py-1"
-          style={{
-            top: `${menuPosition.top}px`,
-            left: `${menuPosition.left}px`,
-          }}
+          className="absolute top-full right-0 mt-1 w-48 bg-slate-800 border border-slate-700 rounded-md shadow-lg z-[9999] py-1"
         >
           <Link
             href={`/contratos/${contractId}`}
