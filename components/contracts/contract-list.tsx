@@ -503,14 +503,19 @@ export function ContractList() {
                               <Button
                                 variant="ghost"
                                 className="h-8 w-8 p-0 text-slate-400 hover:text-white hover:bg-slate-700"
-                                onClick={() => {
+                                onClick={(e) => {
                                   console.log("[v0] Trigger clicked for contract:", contract.numero_contrato)
+                                  e.stopPropagation()
                                 }}
                               >
                                 <MoreHorizontal className="h-4 w-4" />
                               </Button>
                             </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="w-48">
+                            <DropdownMenuContent
+                              align="end"
+                              className="w-48"
+                              onCloseAutoFocus={(e) => e.preventDefault()}
+                            >
                               <DropdownMenuItem asChild>
                                 <Link href={`/contratos/${contract.id}`} className="flex items-center cursor-pointer">
                                   <Eye className="mr-2 h-4 w-4" />
@@ -588,14 +593,19 @@ export function ContractList() {
                             <Button
                               variant="ghost"
                               className="h-8 w-8 p-0 text-slate-400 hover:text-white hover:bg-slate-700"
-                              onClick={() => {
+                              onClick={(e) => {
                                 console.log("[v0] Mobile trigger clicked for contract:", contract.numero_contrato)
+                                e.stopPropagation()
                               }}
                             >
                               <MoreHorizontal className="h-4 w-4" />
                             </Button>
                           </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" className="w-48">
+                          <DropdownMenuContent
+                            align="end"
+                            className="w-48"
+                            onCloseAutoFocus={(e) => e.preventDefault()}
+                          >
                             <DropdownMenuItem asChild>
                               <Link href={`/contratos/${contract.id}`} className="flex items-center cursor-pointer">
                                 <Eye className="mr-2 h-4 w-4" />

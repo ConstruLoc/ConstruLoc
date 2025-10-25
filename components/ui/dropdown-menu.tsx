@@ -21,6 +21,8 @@ function DropdownMenuTrigger({ ...props }: React.ComponentProps<typeof DropdownM
 function DropdownMenuContent({
   className,
   sideOffset = 4,
+  onInteractOutside,
+  onPointerDownOutside,
   ...props
 }: React.ComponentProps<typeof DropdownMenuPrimitive.Content>) {
   return (
@@ -30,6 +32,30 @@ function DropdownMenuContent({
         sideOffset={sideOffset}
         collisionPadding={10}
         avoidCollisions={true}
+        onInteractOutside={(e) => {
+          // Prevenir fechamento automático em PWAs
+          const target = e.target as HTMLElement
+          // Só fechar se clicar fora do menu E não for no trigger
+          if (
+            !target.closest('[data-slot="dropdown-menu-trigger"]') &&
+            !target.closest('[data-slot="dropdown-menu-content"]')
+          ) {
+            onInteractOutside?.(e)
+          } else {
+            e.preventDefault()
+          }
+        }}
+        onPointerDownOutside={(e) => {
+          // Prevenir fechamento quando clicar no próprio menu em PWAs
+          const target = e.target as HTMLElement
+          if (
+            target.closest('[data-slot="dropdown-menu-content"]') ||
+            target.closest('[data-slot="dropdown-menu-trigger"]')
+          ) {
+            e.preventDefault()
+          }
+          onPointerDownOutside?.(e)
+        }}
         className={cn(
           "bg-popover text-popover-foreground data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 z-50 max-h-60 min-w-[8rem] origin-(--radix-dropdown-menu-content-transform-origin) overflow-x-hidden overflow-y-auto rounded-md border p-1 shadow-md",
           className,
@@ -194,7 +220,7 @@ function DropdownMenuSubContent({
     <DropdownMenuPrimitive.SubContent
       data-slot="dropdown-menu-sub-content"
       className={cn(
-        "bg-popover text-popover-foreground data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 z-[9999] min-w-[8rem] origin-(--radix-dropdown-menu-content-transform-origin) overflow-hidden rounded-md border p-1 shadow-lg",
+        "bg-popover text-popover-foreground data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 z-50 min-w-[8rem] origin-(--radix-dropdown-menu-content-transform-origin) overflow-hidden rounded-md border p-1 shadow-lg",
         className,
       )}
       {...props}
