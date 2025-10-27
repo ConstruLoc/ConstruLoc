@@ -7,17 +7,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
 import {
   Search,
   Download,
@@ -35,6 +24,7 @@ import {
 import { MainLayout } from "@/components/layout/main-layout"
 import { createClient } from "@/lib/supabase/client"
 import { useToast } from "@/hooks/use-toast"
+import { SimpleModal, SimpleAlertModal } from "@/components/ui/simple-modal"
 
 interface ContractPayment {
   id: string
@@ -790,205 +780,206 @@ export default function PagamentosPage() {
         )}
       </div>
 
-      <Dialog
-        open={contractDetailsState.isOpen}
-        onOpenChange={(open) => {
-          if (!open) {
-            setContractDetailsState({ isOpen: false, payment: null })
-          }
-        }}
+      <SimpleModal
+        isOpen={contractDetailsState.isOpen}
+        onClose={() => setContractDetailsState({ isOpen: false, payment: null })}
+        title="Detalhes do Contrato"
+        description="Informações do pagamento registrado"
+        icon={<FileText className="h-6 w-6 text-orange-500" />}
+        maxWidth="max-w-2xl"
       >
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <div className="flex items-center gap-3 mb-2">
-              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-orange-500/10">
-                <FileText className="h-6 w-6 text-orange-500" />
-              </div>
-              <div className="flex-1">
-                <DialogTitle className="text-xl">Detalhes do Contrato</DialogTitle>
-                <DialogDescription>Informações do pagamento registrado</DialogDescription>
+        {contractDetailsState.payment && (
+          <div className="space-y-4 mt-4 max-h-[60vh] overflow-y-auto">
+            <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-3 flex items-start gap-2">
+              <AlertCircle className="h-5 w-5 text-yellow-500 mt-0.5 flex-shrink-0" />
+              <div className="text-sm text-yellow-200">
+                <p className="font-semibold mb-1">Contrato Excluído</p>
+                <p className="text-yellow-200/80">
+                  Este contrato foi excluído do sistema. As informações abaixo são do histórico de pagamento.
+                </p>
               </div>
             </div>
-          </DialogHeader>
 
-          {contractDetailsState.payment && (
-            <div className="space-y-4 mt-4">
-              <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-3 flex items-start gap-2">
-                <AlertCircle className="h-5 w-5 text-yellow-500 mt-0.5 flex-shrink-0" />
-                <div className="text-sm text-yellow-200">
-                  <p className="font-semibold mb-1">Contrato Excluído</p>
-                  <p className="text-yellow-200/80">
-                    Este contrato foi excluído do sistema. As informações abaixo são do histórico de pagamento.
+            <div className="space-y-3">
+              <div className="flex items-center gap-3 p-3 bg-gray-800/50 rounded-lg border border-gray-700">
+                <FileText className="h-5 w-5 text-orange-500" />
+                <div className="flex-1">
+                  <p className="text-sm text-muted-foreground">Número do Contrato</p>
+                  <p className="font-semibold text-orange-400">
+                    {contractDetailsState.payment.contrato_numero || "N/A"}
                   </p>
                 </div>
               </div>
 
-              <div className="space-y-3">
-                <div className="flex items-center gap-3 p-3 bg-gray-800/50 rounded-lg border border-gray-700">
-                  <FileText className="h-5 w-5 text-orange-500" />
-                  <div className="flex-1">
-                    <p className="text-sm text-muted-foreground">Número do Contrato</p>
-                    <p className="font-semibold text-orange-400">
-                      {contractDetailsState.payment.contrato_numero || "N/A"}
-                    </p>
-                  </div>
+              <div className="flex items-center gap-3 p-3 bg-gray-800/50 rounded-lg border border-gray-700">
+                <DollarSign className="h-5 w-5 text-green-500" />
+                <div className="flex-1">
+                  <p className="text-sm text-muted-foreground">Valor do Pagamento</p>
+                  <p className="font-semibold text-green-500">
+                    R$ {contractDetailsState.payment.valor?.toFixed(2) || "0.00"}
+                  </p>
                 </div>
+              </div>
 
-                <div className="flex items-center gap-3 p-3 bg-gray-800/50 rounded-lg border border-gray-700">
-                  <DollarSign className="h-5 w-5 text-green-500" />
-                  <div className="flex-1">
-                    <p className="text-sm text-muted-foreground">Valor do Pagamento</p>
-                    <p className="font-semibold text-green-500">
-                      R$ {contractDetailsState.payment.valor?.toFixed(2) || "0.00"}
-                    </p>
-                  </div>
+              <div className="flex items-center gap-3 p-3 bg-gray-800/50 rounded-lg border border-gray-700">
+                <Calendar className="h-5 w-5 text-blue-500" />
+                <div className="flex-1">
+                  <p className="text-sm text-muted-foreground">Data de Pagamento</p>
+                  <p className="font-semibold">
+                    {contractDetailsState.payment.data_pagamento
+                      ? new Date(contractDetailsState.payment.data_pagamento).toLocaleDateString("pt-BR", {
+                          day: "2-digit",
+                          month: "long",
+                          year: "numeric",
+                        })
+                      : "Não registrada"}
+                  </p>
                 </div>
+              </div>
 
-                <div className="flex items-center gap-3 p-3 bg-gray-800/50 rounded-lg border border-gray-700">
-                  <Calendar className="h-5 w-5 text-blue-500" />
-                  <div className="flex-1">
-                    <p className="text-sm text-muted-foreground">Data de Pagamento</p>
-                    <p className="font-semibold">
-                      {contractDetailsState.payment.data_pagamento
-                        ? new Date(contractDetailsState.payment.data_pagamento).toLocaleDateString("pt-BR", {
-                            day: "2-digit",
-                            month: "long",
-                            year: "numeric",
-                          })
-                        : "Não registrada"}
-                    </p>
-                  </div>
+              <div className="flex items-center gap-3 p-3 bg-gray-800/50 rounded-lg border border-gray-700">
+                <CreditCard className="h-5 w-5 text-purple-500" />
+                <div className="flex-1">
+                  <p className="text-sm text-muted-foreground">Status do Pagamento</p>
+                  <Badge className={getStatusColor(contractDetailsState.payment.status)}>
+                    {getStatusLabel(contractDetailsState.payment.status)}
+                  </Badge>
                 </div>
+              </div>
 
-                <div className="flex items-center gap-3 p-3 bg-gray-800/50 rounded-lg border border-gray-700">
-                  <CreditCard className="h-5 w-5 text-purple-500" />
-                  <div className="flex-1">
-                    <p className="text-sm text-muted-foreground">Status do Pagamento</p>
-                    <Badge className={getStatusColor(contractDetailsState.payment.status)}>
-                      {getStatusLabel(contractDetailsState.payment.status)}
-                    </Badge>
-                  </div>
-                </div>
-
-                {contractDetailsState.payment.equipamentos_info &&
-                  contractDetailsState.payment.equipamentos_info.length > 0 && (
-                    <div className="p-3 bg-gray-800/50 rounded-lg border border-gray-700">
-                      <div className="flex items-center gap-2 mb-3">
-                        <Package className="h-5 w-5 text-orange-500" />
-                        <p className="text-sm text-muted-foreground font-semibold">Equipamentos Alugados</p>
-                      </div>
-                      <div className="space-y-2">
-                        {contractDetailsState.payment.equipamentos_info.map((equip, index) => (
-                          <div
-                            key={index}
-                            className="flex items-center justify-between p-2 bg-gray-700/50 rounded border border-gray-600"
-                          >
-                            <div className="flex-1">
-                              <p className="font-medium text-sm">{equip.nome}</p>
-                              <p className="text-xs text-muted-foreground">
-                                {equip.marca} {equip.modelo && `• ${equip.modelo}`}
-                              </p>
-                            </div>
-                            <Badge
-                              variant="secondary"
-                              className="bg-orange-500/20 text-orange-400 border-orange-500/30"
-                            >
-                              Qtd: {equip.quantidade}
-                            </Badge>
-                          </div>
-                        ))}
-                      </div>
+              {contractDetailsState.payment.equipamentos_info &&
+                contractDetailsState.payment.equipamentos_info.length > 0 && (
+                  <div className="p-3 bg-gray-800/50 rounded-lg border border-gray-700">
+                    <div className="flex items-center gap-2 mb-3">
+                      <Package className="h-5 w-5 text-orange-500" />
+                      <p className="text-sm text-muted-foreground font-semibold">Equipamentos Alugados</p>
                     </div>
-                  )}
-              </div>
-
-              <div className="flex justify-end pt-4 border-t border-gray-700">
-                <Button
-                  variant="outline"
-                  onClick={() => setContractDetailsState({ isOpen: false, payment: null })}
-                  className="bg-transparent"
-                >
-                  Fechar
-                </Button>
-              </div>
+                    <div className="space-y-2">
+                      {contractDetailsState.payment.equipamentos_info.map((equip, index) => (
+                        <div
+                          key={index}
+                          className="flex items-center justify-between p-2 bg-gray-700/50 rounded border border-gray-600"
+                        >
+                          <div className="flex-1">
+                            <p className="font-medium text-sm">{equip.nome}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {equip.marca} {equip.modelo && `• ${equip.modelo}`}
+                            </p>
+                          </div>
+                          <Badge variant="secondary" className="bg-orange-500/20 text-orange-400 border-orange-500/30">
+                            Qtd: {equip.quantidade}
+                          </Badge>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
             </div>
-          )}
-        </DialogContent>
-      </Dialog>
 
-      <AlertDialog
-        open={deleteOrphanedState.isOpen}
-        onOpenChange={(open) => !open && setDeleteOrphanedState({ isOpen: false, paymentId: null, contractNumber: "" })}
-      >
-        <AlertDialogContent className="max-w-md">
-          <AlertDialogHeader>
-            <div className="flex items-center gap-3 mb-2">
-              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-red-500/10">
-                <Trash2 className="h-6 w-6 text-red-500" />
-              </div>
-              <div className="flex-1">
-                <AlertDialogTitle className="text-xl">Excluir Pagamento Permanentemente</AlertDialogTitle>
-              </div>
+            <div className="flex justify-end pt-4 border-t border-gray-700">
+              <Button
+                variant="outline"
+                onClick={() => setContractDetailsState({ isOpen: false, payment: null })}
+                className="bg-transparent"
+              >
+                Fechar
+              </Button>
             </div>
-            <AlertDialogDescription className="text-base text-foreground/80">
-              Tem certeza que deseja excluir permanentemente o registro de pagamento do contrato{" "}
-              <span className="font-semibold text-foreground">"{deleteOrphanedState.contractNumber}"</span>?
-              <br />
-              <br />
-              <span className="font-semibold text-red-500">Esta ação não pode ser desfeita!</span> O histórico de
-              pagamento será perdido.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDeleteOrphanedPayment} className="bg-red-500 hover:bg-red-600">
-              Excluir Permanentemente
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+          </div>
+        )}
+      </SimpleModal>
 
-      <AlertDialog
-        open={markPaidConfirmState.isOpen}
-        onOpenChange={(open) => {
-          console.log("[v0] AlertDialog onOpenChange:", open)
-          if (!open) {
-            setMarkPaidConfirmState({ isOpen: false, paymentId: null, contractNumber: "" })
-          }
+      <SimpleAlertModal
+        isOpen={deleteOrphanedState.isOpen}
+        onClose={() => setDeleteOrphanedState({ isOpen: false, paymentId: null, contractNumber: "" })}
+        onConfirm={handleDeleteOrphanedPayment}
+        title="Excluir Pagamento Permanentemente"
+        description={`Tem certeza que deseja excluir permanentemente o registro de pagamento do contrato "${deleteOrphanedState.contractNumber}"?\n\nEsta ação não pode ser desfeita! O histórico de pagamento será perdido.`}
+        icon={<Trash2 className="h-6 w-6 text-red-500 bg-red-500/10 p-2 rounded-full" />}
+        confirmText="Excluir Permanentemente"
+        cancelText="Cancelar"
+        confirmVariant="destructive"
+      />
+
+      <SimpleAlertModal
+        isOpen={markPaidConfirmState.isOpen}
+        onClose={() => {
+          console.log("[v0] SimpleAlertModal closed")
+          setMarkPaidConfirmState({ isOpen: false, paymentId: null, contractNumber: "" })
         }}
+        onConfirm={() => {
+          console.log("[v0] SimpleAlertModal confirmed")
+          handleMarkAsPaid()
+        }}
+        title="Confirmar Pagamento"
+        description={`Tem certeza que deseja marcar o contrato "${markPaidConfirmState.contractNumber}" como pago?\n\nEsta ação atualizará o status do pagamento para "Pago".`}
+        icon={<CheckCircle2 className="h-6 w-6 text-green-500 bg-green-500/10 p-2 rounded-full" />}
+        confirmText="Confirmar Pagamento"
+        cancelText="Cancelar"
+        confirmVariant="success"
+      />
+
+      <SimpleModal
+        isOpen={editDialogState.isOpen}
+        onClose={() =>
+          setEditDialogState({
+            isOpen: false,
+            paymentId: null,
+            contractNumber: "",
+            currentStatus: "",
+            newStatus: "",
+          })
+        }
+        title="Editar Status do Pagamento"
+        description={`Alterar status do contrato ${editDialogState.contractNumber}`}
+        icon={<Edit className="h-6 w-6 text-orange-500" />}
       >
-        <AlertDialogContent className="max-w-md">
-          <AlertDialogHeader>
-            <div className="flex items-center gap-3 mb-2">
-              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-green-500/10">
-                <CheckCircle2 className="h-6 w-6 text-green-500" />
-              </div>
-              <div className="flex-1">
-                <AlertDialogTitle className="text-xl">Confirmar Pagamento</AlertDialogTitle>
-              </div>
-            </div>
-            <AlertDialogDescription className="text-base text-foreground/80">
-              Tem certeza que deseja marcar o contrato{" "}
-              <span className="font-semibold text-foreground">"{markPaidConfirmState.contractNumber}"</span> como pago?
-              <br />
-              <br />
-              Esta ação atualizará o status do pagamento para "Pago".
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => console.log("[v0] AlertDialog cancelled")}>Cancelar</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => {
-                console.log("[v0] AlertDialog confirmed")
-                handleMarkAsPaid()
-              }}
-              className="bg-green-500 hover:bg-green-600"
+        <div className="space-y-4">
+          <div>
+            <label className="text-sm font-medium text-foreground mb-2 block">Novo Status</label>
+            <Select
+              value={editDialogState.newStatus}
+              onValueChange={(value) =>
+                setEditDialogState((prev) => ({
+                  ...prev,
+                  newStatus: value,
+                }))
+              }
             >
-              Confirmar Pagamento
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Selecione o status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="pendente">Pendente</SelectItem>
+                <SelectItem value="pago">Pago</SelectItem>
+                <SelectItem value="parcial">Parcial</SelectItem>
+                <SelectItem value="cancelado">Cancelado</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="flex justify-end gap-3 pt-4 border-t border-gray-700">
+            <Button
+              variant="outline"
+              onClick={() =>
+                setEditDialogState({
+                  isOpen: false,
+                  paymentId: null,
+                  contractNumber: "",
+                  currentStatus: "",
+                  newStatus: "",
+                })
+              }
+              className="bg-transparent"
+            >
+              Cancelar
+            </Button>
+            <Button onClick={handleUpdateStatus} className="bg-orange-500 hover:bg-orange-600">
+              Salvar Alterações
+            </Button>
+          </div>
+        </div>
+      </SimpleModal>
     </MainLayout>
   )
 }

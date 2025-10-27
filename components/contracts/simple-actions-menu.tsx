@@ -34,23 +34,57 @@ export function SimpleActionsMenu({
 
   useEffect(() => {
     if (isOpen && buttonRef.current) {
-      const rect = buttonRef.current.getBoundingClientRect()
-      const menuWidth = 192 // w-48 = 12rem = 192px
-      const menuHeight = contractStatus !== "cancelado" ? 240 : 200 // Approximate height
+      // Use requestAnimationFrame to ensure DOM is ready
+      requestAnimationFrame(() => {
+        if (!buttonRef.current) return
 
-      // Calculate position
-      let top = rect.bottom + 4
-      let left = rect.right - menuWidth
+        const rect = buttonRef.current.getBoundingClientRect()
+        const menuWidth = 192 // w-48 = 12rem = 192px
+        const menuHeight = contractStatus !== "cancelado" ? 240 : 200
 
-      // Adjust if menu goes off screen
-      if (left < 8) left = 8
-      if (top + menuHeight > window.innerHeight) {
-        top = rect.top - menuHeight - 4
-      }
+        console.log("[v0] Button rect:", rect)
+        console.log("[v0] Window dimensions:", { width: window.innerWidth, height: window.innerHeight })
 
-      setPosition({ top, left })
+        // Verificar se as coordenadas são válidas
+        if (rect.top === 0 && rect.left === 0 && rect.width === 0 && rect.height === 0) {
+          console.error("[v0] Invalid button rect, using fallback position")
+          // Fallback: posicionar no centro da tela
+          setPosition({
+            top: window.innerHeight / 2 - menuHeight / 2,
+            left: window.innerWidth / 2 - menuWidth / 2,
+          })
+          return
+        }
 
-      console.log("[v0] Menu opened at position:", { top, left })
+        // Calculate position - menu appears below and aligned to the right of the button
+        let top = rect.bottom + 8 // 8px gap below button
+        let left = rect.right - menuWidth // Align right edge of menu with right edge of button
+
+        console.log("[v0] Initial calculated position:", { top, left })
+
+        // Adjust if menu goes off screen horizontally
+        if (left < 8) {
+          left = 8
+          console.log("[v0] Adjusted left to prevent off-screen:", left)
+        }
+        if (left + menuWidth > window.innerWidth - 8) {
+          left = window.innerWidth - menuWidth - 8
+          console.log("[v0] Adjusted left to fit in viewport:", left)
+        }
+
+        // Adjust if menu goes off screen vertically
+        if (top + menuHeight > window.innerHeight - 8) {
+          top = rect.top - menuHeight - 8 // Position above button instead
+          console.log("[v0] Adjusted top to position above button:", top)
+        }
+
+        // Final safety check
+        if (top < 8) top = 8
+        if (left < 8) left = 8
+
+        console.log("[v0] Final menu position:", { top, left })
+        setPosition({ top, left })
+      })
     }
   }, [isOpen, contractStatus])
 
@@ -86,7 +120,8 @@ export function SimpleActionsMenu({
   const handleToggle = (e: React.MouseEvent) => {
     e.preventDefault()
     e.stopPropagation()
-    console.log("[v0] Menu toggle clicked, current state:", isOpen)
+    console.log("[v0] Menu toggle clicked for contract:", contractNumber)
+    console.log("[v0] Current isOpen state:", isOpen)
     setIsOpen(!isOpen)
   }
 
