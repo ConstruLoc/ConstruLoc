@@ -141,8 +141,20 @@ export function SimpleActionsMenu({
   const handleToggle = (e: React.MouseEvent) => {
     e.preventDefault()
     e.stopPropagation()
-    console.log("[v0] Menu toggle clicked for contract:", contractNumber)
-    console.log("[v0] Current isOpen state:", isOpen)
+    console.log("[v0] ===== MENU TOGGLE =====")
+    console.log("[v0] Contract:", contractNumber)
+    console.log("[v0] Current isOpen:", isOpen)
+    console.log("[v0] Button ref exists:", !!buttonRef.current)
+    if (buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect()
+      console.log("[v0] Button position at toggle:", {
+        top: rect.top,
+        left: rect.left,
+        right: rect.right,
+        bottom: rect.bottom,
+      })
+    }
+    console.log("[v0] =======================")
     setIsOpen(!isOpen)
   }
 
