@@ -322,11 +322,13 @@ export default function PagamentosPage() {
   }
 
   const handleMarkAsPaidClick = (paymentId: string, numero: string) => {
+    console.log("[v0] handleMarkAsPaidClick called:", numero, paymentId)
     setMarkPaidConfirmState({
       isOpen: true,
       paymentId: paymentId,
       contractNumber: numero,
     })
+    console.log("[v0] markPaidConfirmState set to open")
   }
 
   const handleMarkAsPaid = async () => {
@@ -518,7 +520,9 @@ export default function PagamentosPage() {
                                   <Button
                                     size="sm"
                                     onClick={(e) => {
-                                      console.log("[v0] Marcar como pago clicked:", contract.numero_contrato)
+                                      e.preventDefault()
+                                      e.stopPropagation()
+                                      console.log("[v0] Marcar como pago button clicked:", contract.numero_contrato)
                                       handleMarkAsPaidClick(contract.pagamento_id, contract.numero_contrato)
                                     }}
                                     className="bg-green-600 hover:bg-green-700"
@@ -727,7 +731,7 @@ export default function PagamentosPage() {
                       <div className="flex items-start justify-between mb-3">
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-2">
-                            <FileText className="h-4 w-4 text-orange-400" />
+                            <FileText className="h-4 w-4 text-orange-500" />
                             <span className="font-medium text-orange-400 text-lg">
                               {payment.contrato_numero || "N/A"}
                             </span>
@@ -744,7 +748,11 @@ export default function PagamentosPage() {
                           <span className="text-muted-foreground">Data de Pagamento:</span>
                           <span>
                             {payment.data_pagamento
-                              ? new Date(payment.data_pagamento).toLocaleDateString("pt-BR")
+                              ? new Date(payment.data_pagamento).toLocaleDateString("pt-BR", {
+                                  day: "2-digit",
+                                  month: "long",
+                                  year: "numeric",
+                                })
                               : "Não registrada"}
                           </span>
                         </div>
@@ -935,6 +943,48 @@ export default function PagamentosPage() {
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
             <AlertDialogAction onClick={handleDeleteOrphanedPayment} className="bg-red-500 hover:bg-red-600">
               Excluir Permanentemente
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog
+        open={markPaidConfirmState.isOpen}
+        onOpenChange={(open) => {
+          console.log("[v0] AlertDialog onOpenChange:", open)
+          if (!open) {
+            setMarkPaidConfirmState({ isOpen: false, paymentId: null, contractNumber: "" })
+          }
+        }}
+      >
+        <AlertDialogContent className="max-w-md">
+          <AlertDialogHeader>
+            <div className="flex items-center gap-3 mb-2">
+              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-green-500/10">
+                <CheckCircle2 className="h-6 w-6 text-green-500" />
+              </div>
+              <div className="flex-1">
+                <AlertDialogTitle className="text-xl">Confirmar Pagamento</AlertDialogTitle>
+              </div>
+            </div>
+            <AlertDialogDescription className="text-base text-foreground/80">
+              Tem certeza que deseja marcar o contrato{" "}
+              <span className="font-semibold text-foreground">"{markPaidConfirmState.contractNumber}"</span> como pago?
+              <br />
+              <br />
+              Esta ação atualizará o status do pagamento para "Pago".
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => console.log("[v0] AlertDialog cancelled")}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                console.log("[v0] AlertDialog confirmed")
+                handleMarkAsPaid()
+              }}
+              className="bg-green-500 hover:bg-green-600"
+            >
+              Confirmar Pagamento
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

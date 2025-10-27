@@ -18,26 +18,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import {
-  Plus,
-  Search,
-  FileText,
-  AlertTriangle,
-  XCircle,
-  MoreHorizontal,
-  Eye,
-  Edit,
-  Download,
-  Anvil as Cancel,
-  Trash2,
-} from "lucide-react"
+import { SimpleActionsMenu } from "@/components/contracts/simple-actions-menu"
+import { Plus, Search, FileText, AlertTriangle, XCircle } from "lucide-react"
 import Link from "next/link"
 import { useToast } from "@/hooks/use-toast"
 import { useRouter } from "next/navigation"
@@ -498,53 +480,16 @@ export function ContractList() {
                           <Badge className={getStatusColor(contract.status)}>{getStatusLabel(contract.status)}</Badge>
                         </TableCell>
                         <TableCell>
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-8 w-8 p-0 text-slate-400 hover:text-white hover:bg-slate-700"
-                              >
-                                <MoreHorizontal className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="w-48">
-                              <DropdownMenuItem onClick={() => router.push(`/contratos/${contract.id}`)}>
-                                <Eye className="mr-2 h-4 w-4" />
-                                Ver detalhes
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => router.push(`/contratos/${contract.id}/editar`)}>
-                                <Edit className="mr-2 h-4 w-4" />
-                                Editar
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
-                                onClick={() => handleDownloadPDF(contract.id, contract.numero_contrato)}
-                              >
-                                <Download className="mr-2 h-4 w-4" />
-                                Baixar PDF
-                              </DropdownMenuItem>
-                              {contract.status !== "cancelado" && (
-                                <>
-                                  <DropdownMenuSeparator />
-                                  <DropdownMenuItem
-                                    onClick={() => handleCancelClick(contract.id, contract.numero_contrato)}
-                                    className="text-yellow-400"
-                                  >
-                                    <Cancel className="mr-2 h-4 w-4" />
-                                    Cancelar
-                                  </DropdownMenuItem>
-                                </>
-                              )}
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem
-                                onClick={() => handleDeleteClick(contract.id, contract.numero_contrato)}
-                                variant="destructive"
-                              >
-                                <Trash2 className="mr-2 h-4 w-4" />
-                                Excluir
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
+                          <SimpleActionsMenu
+                            contractId={contract.id}
+                            contractNumber={contract.numero_contrato}
+                            contractStatus={contract.status}
+                            onViewDetails={() => router.push(`/contratos/${contract.id}`)}
+                            onEdit={() => router.push(`/contratos/${contract.id}/editar`)}
+                            onDownloadPDF={() => handleDownloadPDF(contract.id, contract.numero_contrato)}
+                            onCancel={() => handleCancelClick(contract.id, contract.numero_contrato)}
+                            onDelete={() => handleDeleteClick(contract.id, contract.numero_contrato)}
+                          />
                         </TableCell>
                       </TableRow>
                     ))
@@ -568,51 +513,16 @@ export function ContractList() {
                             <div className="text-sm text-slate-400">{contract.clientes.empresa}</div>
                           )}
                         </div>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-8 w-8 p-0 text-slate-400 hover:text-white hover:bg-slate-700"
-                            >
-                              <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" className="w-48">
-                            <DropdownMenuItem onClick={() => router.push(`/contratos/${contract.id}`)}>
-                              <Eye className="mr-2 h-4 w-4" />
-                              Ver detalhes
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => router.push(`/contratos/${contract.id}/editar`)}>
-                              <Edit className="mr-2 h-4 w-4" />
-                              Editar
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleDownloadPDF(contract.id, contract.numero_contrato)}>
-                              <Download className="mr-2 h-4 w-4" />
-                              Baixar PDF
-                            </DropdownMenuItem>
-                            {contract.status !== "cancelado" && (
-                              <>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem
-                                  onClick={() => handleCancelClick(contract.id, contract.numero_contrato)}
-                                  className="text-yellow-400"
-                                >
-                                  <Cancel className="mr-2 h-4 w-4" />
-                                  Cancelar
-                                </DropdownMenuItem>
-                              </>
-                            )}
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem
-                              onClick={() => handleDeleteClick(contract.id, contract.numero_contrato)}
-                              variant="destructive"
-                            >
-                              <Trash2 className="mr-2 h-4 w-4" />
-                              Excluir
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
+                        <SimpleActionsMenu
+                          contractId={contract.id}
+                          contractNumber={contract.numero_contrato}
+                          contractStatus={contract.status}
+                          onViewDetails={() => router.push(`/contratos/${contract.id}`)}
+                          onEdit={() => router.push(`/contratos/${contract.id}/editar`)}
+                          onDownloadPDF={() => handleDownloadPDF(contract.id, contract.numero_contrato)}
+                          onCancel={() => handleCancelClick(contract.id, contract.numero_contrato)}
+                          onDelete={() => handleDeleteClick(contract.id, contract.numero_contrato)}
+                        />
                       </div>
                       <div className="space-y-2 text-sm">
                         <div className="flex justify-between">
