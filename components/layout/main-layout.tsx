@@ -2,11 +2,9 @@
 import type React from "react"
 import { useState } from "react"
 import { Sidebar } from "@/components/layout/sidebar"
-import { Header } from "@/components/header"
-import { useTheme } from "@/contexts/theme-context"
+import { Header } from "@/components/layout/header"
 import { Button } from "@/components/ui/button"
 import { Menu, X } from "lucide-react"
-import { NotificationSetup } from "@/components/notifications/notification-setup"
 
 interface MainLayoutProps {
   children: React.ReactNode
@@ -15,12 +13,11 @@ interface MainLayoutProps {
 }
 
 export function MainLayout({ children, showBackButton = false, title }: MainLayoutProps) {
-  const { theme } = useTheme()
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
   return (
-    <div className={`min-h-screen ${theme === "dark" ? "bg-gray-900" : "bg-gray-50"}`}>
-      <Header showBackButton={showBackButton} title={title} />
+    <div className="min-h-screen bg-gray-900">
+      <Header title={title} />
 
       {/* Mobile menu button */}
       <div className="md:hidden fixed top-4 left-4 z-50">
@@ -52,12 +49,7 @@ export function MainLayout({ children, showBackButton = false, title }: MainLayo
           </div>
         )}
 
-        <main className="flex-1 p-4 md:p-6">
-          <div className="mb-4">
-            <NotificationSetup />
-          </div>
-          {children}
-        </main>
+        <main className="flex-1 p-4 md:p-6">{children}</main>
       </div>
     </div>
   )

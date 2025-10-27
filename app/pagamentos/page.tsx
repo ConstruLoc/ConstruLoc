@@ -506,12 +506,21 @@ export default function PagamentosPage() {
                             </TableCell>
                             <TableCell>
                               <div className="flex items-center gap-2">
+                                {console.log(
+                                  "[v0] Contract:",
+                                  contract.numero_contrato,
+                                  "Payment ID:",
+                                  contract.pagamento_id,
+                                  "Status:",
+                                  contract.status_pagamento,
+                                )}
                                 {contract.status_pagamento === "pendente" && contract.pagamento_id && (
                                   <Button
                                     size="sm"
-                                    onClick={() =>
+                                    onClick={(e) => {
+                                      console.log("[v0] Marcar como pago clicked:", contract.numero_contrato)
                                       handleMarkAsPaidClick(contract.pagamento_id, contract.numero_contrato)
-                                    }
+                                    }}
                                     className="bg-green-600 hover:bg-green-700"
                                   >
                                     <CheckCircle2 className="w-4 h-4 mr-2" />
@@ -522,13 +531,14 @@ export default function PagamentosPage() {
                                   <Button
                                     size="sm"
                                     variant="outline"
-                                    onClick={() =>
+                                    onClick={(e) => {
+                                      console.log("[v0] Editar status clicked:", contract.numero_contrato)
                                       handleEditStatusClick(
                                         contract.pagamento_id,
                                         contract.numero_contrato,
                                         contract.status_pagamento,
                                       )
-                                    }
+                                    }}
                                     className="bg-transparent border-gray-600 hover:bg-gray-700"
                                   >
                                     <Edit className="w-4 h-4" />
