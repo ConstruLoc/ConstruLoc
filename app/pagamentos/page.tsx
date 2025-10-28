@@ -25,6 +25,7 @@ import { MainLayout } from "@/components/layout/main-layout"
 import { createClient } from "@/lib/supabase/client"
 import { useToast } from "@/hooks/use-toast"
 import { SimpleModal, SimpleAlertModal } from "@/components/ui/simple-modal"
+import { useRouter } from "next/navigation"
 
 interface ContractPayment {
   id: string
@@ -56,6 +57,44 @@ interface OrphanedPayment {
     modelo: string
     quantidade: number
   }>
+}
+
+function calculatePendingMonths(dataInicio: string, dataFim: string, statusPagamento: string) {
+  if (statusPagamento !== "pendente") {
+    return null
+  }
+
+  const inicio = new Date(dataInicio)
+  const fim = new Date(dataFim)
+  const hoje = new Date()
+
+  // Se o contrato ainda não começou, não há meses pendentes
+  if (inicio > hoje) {
+    return null
+  }
+
+  // Calcular quantos meses se passaram desde o início
+  const mesesPassados = []
+  const dataAtual = new Date(inicio)
+
+  while (dataAtual <= hoje && dataAtual <= fim) {
+    mesesPassados.push({
+      mes: dataAtual.toLocaleDateString("pt-BR", { month: "long" }),
+      ano: dataAtual.getFullYear(),
+      mesAno: `${dataAtual.toLocaleDateString("pt-BR", { month: "short" })}/${dataAtual.getFullYear()}`,
+    })
+    dataAtual.setMonth(dataAtual.getMonth() + 1)
+  }
+
+  if (mesesPassados.length === 0) {
+    return null
+  }
+
+  return {
+    quantidade: mesesPassados.length,
+    meses: mesesPassados,
+    mensagem: `${mesesPassados.length} ${mesesPassados.length === 1 ? "mês atrasado" : "meses atrasados"}`,
+  }
 }
 
 export default function PagamentosPage() {
@@ -110,6 +149,7 @@ export default function PagamentosPage() {
 
   const supabase = createClient()
   const { toast } = useToast()
+  const router = useRouter()
 
   useEffect(() => {
     fetchContracts()
@@ -374,6 +414,10 @@ export default function PagamentosPage() {
     setContractDetailsState({ isOpen: true, payment })
   }
 
+  const handleContractClick = (contractId: string) => {
+    router.push(`/contratos/${contractId}`)
+  }
+
   return (
     <MainLayout showBackButton={true} title="Pagamentos">
       <div className="p-4 md:p-6 space-y-6 animate-fade-in">
@@ -469,80 +513,108 @@ export default function PagamentosPage() {
                           </TableCell>
                         </TableRow>
                       ) : (
-                        filteredContracts.map((contract) => (
-                          <TableRow key={contract.id}>
-                            <TableCell className="font-medium text-orange-400">{contract.numero_contrato}</TableCell>
-                            <TableCell>
-                              <div>
-                                <div className="font-medium">{contract.clientes?.nome}</div>
-                                {contract.clientes?.empresa && (
-                                  <div className="text-sm text-muted-foreground">{contract.clientes.empresa}</div>
-                                )}
-                              </div>
-                            </TableCell>
-                            <TableCell>
-                              <div className="text-sm">
-                                <div>{contract.data_inicio.split("-").reverse().join("/")}</div>
-                                <div className="text-muted-foreground">
-                                  até {contract.data_fim.split("-").reverse().join("/")}
+                        filteredContracts.map((contract) => {
+                          const pendingInfo = calculatePendingMonths(
+                            contract.data_inicio,
+                            contract.data_fim,
+                            contract.status_pagamento,
+                          )
+
+                          return (
+                            <TableRow
+                              key={contract.id}
+                              onClick={() => handleContractClick(contract.id)}
+                              className="cursor-pointer hover:bg-gray-700/30 transition-colors"
+                            >
+                              <TableCell className="font-medium text-orange-400">{contract.numero_contrato}</TableCell>
+                              <TableCell>
+                                <div>
+                                  <div className="font-medium">{contract.clientes?.nome}</div>
+                                  {contract.clientes?.empresa && (
+                                    <div className="text-sm text-muted-foreground">{contract.clientes.empresa}</div>
+                                  )}
                                 </div>
-                              </div>
-                            </TableCell>
-                            <TableCell className="font-medium text-orange-500">
-                              R$ {contract.valor_total?.toFixed(2) || "0.00"}
-                            </TableCell>
-                            <TableCell>
-                              <Badge className={getStatusColor(contract.status_pagamento)}>
-                                {getStatusLabel(contract.status_pagamento)}
-                              </Badge>
-                            </TableCell>
-                            <TableCell>
-                              <div className="flex items-center gap-2">
-                                {console.log(
-                                  "[v0] Contract:",
-                                  contract.numero_contrato,
-                                  "Payment ID:",
-                                  contract.pagamento_id,
-                                  "Status:",
-                                  contract.status_pagamento,
-                                )}
-                                {contract.status_pagamento === "pendente" && contract.pagamento_id && (
-                                  <Button
-                                    size="sm"
-                                    onClick={(e) => {
-                                      e.preventDefault()
-                                      e.stopPropagation()
-                                      console.log("[v0] Marcar como pago button clicked:", contract.numero_contrato)
-                                      handleMarkAsPaidClick(contract.pagamento_id, contract.numero_contrato)
-                                    }}
-                                    className="bg-green-600 hover:bg-green-700"
-                                  >
-                                    <CheckCircle2 className="w-4 h-4 mr-2" />
-                                    Marcar como Pago
-                                  </Button>
-                                )}
-                                {contract.pagamento_id && (
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    onClick={(e) => {
-                                      console.log("[v0] Editar status clicked:", contract.numero_contrato)
-                                      handleEditStatusClick(
-                                        contract.pagamento_id,
-                                        contract.numero_contrato,
-                                        contract.status_pagamento,
-                                      )
-                                    }}
-                                    className="bg-transparent border-gray-600 hover:bg-gray-700"
-                                  >
-                                    <Edit className="w-4 h-4" />
-                                    Editar Status
-                                  </Button>
-                                )}
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        ))
+                              </TableCell>
+                              <TableCell>
+                                <div className="text-sm">
+                                  <div>{contract.data_inicio.split("-").reverse().join("/")}</div>
+                                  <div className="text-muted-foreground">
+                                    até {contract.data_fim.split("-").reverse().join("/")}
+                                  </div>
+                                </div>
+                              </TableCell>
+                              <TableCell className="font-medium text-orange-500">
+                                R$ {contract.valor_total?.toFixed(2) || "0.00"}
+                              </TableCell>
+                              <TableCell>
+                                <div className="space-y-1">
+                                  <Badge className={getStatusColor(contract.status_pagamento)}>
+                                    {getStatusLabel(contract.status_pagamento)}
+                                  </Badge>
+                                  {pendingInfo && (
+                                    <div className="text-xs text-yellow-400 font-medium">
+                                      {pendingInfo.mensagem}
+                                      <div className="text-muted-foreground mt-0.5">
+                                        {pendingInfo.meses
+                                          .slice(0, 3)
+                                          .map((m) => m.mesAno)
+                                          .join(", ")}
+                                        {pendingInfo.quantidade > 3 && "..."}
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <div className="flex items-center gap-2">
+                                  {console.log(
+                                    "[v0] Contract:",
+                                    contract.numero_contrato,
+                                    "Payment ID:",
+                                    contract.pagamento_id,
+                                    "Status:",
+                                    contract.status_pagamento,
+                                  )}
+                                  {contract.status_pagamento === "pendente" && contract.pagamento_id && (
+                                    <Button
+                                      size="sm"
+                                      onClick={(e) => {
+                                        e.preventDefault()
+                                        e.stopPropagation()
+                                        console.log("[v0] Marcar como pago button clicked:", contract.numero_contrato)
+                                        handleMarkAsPaidClick(contract.pagamento_id, contract.numero_contrato)
+                                      }}
+                                      className="bg-green-600 hover:bg-green-700"
+                                    >
+                                      <CheckCircle2 className="w-4 h-4 mr-2" />
+                                      Marcar como Pago
+                                    </Button>
+                                  )}
+                                  {contract.pagamento_id && (
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={(e) => {
+                                        e.preventDefault()
+                                        e.stopPropagation()
+                                        console.log("[v0] Editar status clicked:", contract.numero_contrato)
+                                        handleEditStatusClick(
+                                          contract.pagamento_id,
+                                          contract.numero_contrato,
+                                          contract.status_pagamento,
+                                        )
+                                      }}
+                                      className="bg-transparent border-gray-600 hover:bg-gray-700"
+                                    >
+                                      <Edit className="w-4 h-4" />
+                                      Editar Status
+                                    </Button>
+                                  )}
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          )
+                        })
                       )}
                     </TableBody>
                   </Table>
@@ -552,71 +624,103 @@ export default function PagamentosPage() {
                   {filteredContracts.length === 0 ? (
                     <div className="text-center text-muted-foreground py-8">Nenhum contrato encontrado</div>
                   ) : (
-                    filteredContracts.map((contract) => (
-                      <Card key={contract.id} className="bg-gray-900 border-gray-700">
-                        <CardContent className="p-4">
-                          <div className="flex items-start justify-between mb-3">
-                            <div className="flex-1">
-                              <div className="font-medium text-orange-400 text-lg mb-1">{contract.numero_contrato}</div>
-                              <div className="font-medium">{contract.clientes?.nome}</div>
-                              {contract.clientes?.empresa && (
-                                <div className="text-sm text-muted-foreground">{contract.clientes.empresa}</div>
+                    filteredContracts.map((contract) => {
+                      const pendingInfo = calculatePendingMonths(
+                        contract.data_inicio,
+                        contract.data_fim,
+                        contract.status_pagamento,
+                      )
+
+                      return (
+                        <Card
+                          key={contract.id}
+                          className="bg-gray-900 border-gray-700 cursor-pointer hover:bg-gray-800/50 transition-colors"
+                          onClick={() => handleContractClick(contract.id)}
+                        >
+                          <CardContent className="p-4">
+                            <div className="flex items-start justify-between mb-3">
+                              <div className="flex-1">
+                                <div className="font-medium text-orange-400 text-lg mb-1">
+                                  {contract.numero_contrato}
+                                </div>
+                                <div className="font-medium">{contract.clientes?.nome}</div>
+                                {contract.clientes?.empresa && (
+                                  <div className="text-sm text-muted-foreground">{contract.clientes.empresa}</div>
+                                )}
+                              </div>
+                            </div>
+                            <div className="space-y-2 text-sm mb-4">
+                              <div className="flex justify-between">
+                                <span className="text-muted-foreground">Período:</span>
+                                <span className="text-right">
+                                  {contract.data_inicio.split("-").reverse().join("/")} até{" "}
+                                  {contract.data_fim.split("-").reverse().join("/")}
+                                </span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-muted-foreground">Valor:</span>
+                                <span className="font-medium text-orange-500">
+                                  R$ {contract.valor_total?.toFixed(2) || "0.00"}
+                                </span>
+                              </div>
+                              <div className="flex justify-between items-center">
+                                <span className="text-muted-foreground">Status:</span>
+                                <div className="text-right space-y-1">
+                                  <Badge className={getStatusColor(contract.status_pagamento)}>
+                                    {getStatusLabel(contract.status_pagamento)}
+                                  </Badge>
+                                  {pendingInfo && (
+                                    <div className="text-xs text-yellow-400 font-medium">
+                                      {pendingInfo.mensagem}
+                                      <div className="text-muted-foreground mt-0.5">
+                                        {pendingInfo.meses
+                                          .slice(0, 2)
+                                          .map((m) => m.mesAno)
+                                          .join(", ")}
+                                        {pendingInfo.quantidade > 2 && "..."}
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                            <div className="flex flex-col gap-2">
+                              {contract.status_pagamento === "pendente" && contract.pagamento_id && (
+                                <Button
+                                  size="sm"
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    handleMarkAsPaidClick(contract.pagamento_id, contract.numero_contrato)
+                                  }}
+                                  className="bg-green-600 hover:bg-green-700 w-full"
+                                >
+                                  <CheckCircle2 className="w-4 h-4 mr-2" />
+                                  Marcar como Pago
+                                </Button>
+                              )}
+                              {contract.pagamento_id && (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    handleEditStatusClick(
+                                      contract.pagamento_id,
+                                      contract.numero_contrato,
+                                      contract.status_pagamento,
+                                    )
+                                  }}
+                                  className="bg-transparent border-gray-600 hover:bg-gray-700 w-full"
+                                >
+                                  <Edit className="w-4 h-4 mr-2" />
+                                  Editar Status
+                                </Button>
                               )}
                             </div>
-                          </div>
-                          <div className="space-y-2 text-sm mb-4">
-                            <div className="flex justify-between">
-                              <span className="text-muted-foreground">Período:</span>
-                              <span className="text-right">
-                                {contract.data_inicio.split("-").reverse().join("/")} até{" "}
-                                {contract.data_fim.split("-").reverse().join("/")}
-                              </span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span className="text-muted-foreground">Valor:</span>
-                              <span className="font-medium text-orange-500">
-                                R$ {contract.valor_total?.toFixed(2) || "0.00"}
-                              </span>
-                            </div>
-                            <div className="flex justify-between items-center">
-                              <span className="text-muted-foreground">Status:</span>
-                              <Badge className={getStatusColor(contract.status_pagamento)}>
-                                {getStatusLabel(contract.status_pagamento)}
-                              </Badge>
-                            </div>
-                          </div>
-                          <div className="flex flex-col gap-2">
-                            {contract.status_pagamento === "pendente" && contract.pagamento_id && (
-                              <Button
-                                size="sm"
-                                onClick={() => handleMarkAsPaidClick(contract.pagamento_id, contract.numero_contrato)}
-                                className="bg-green-600 hover:bg-green-700 w-full"
-                              >
-                                <CheckCircle2 className="w-4 h-4 mr-2" />
-                                Marcar como Pago
-                              </Button>
-                            )}
-                            {contract.pagamento_id && (
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() =>
-                                  handleEditStatusClick(
-                                    contract.pagamento_id,
-                                    contract.numero_contrato,
-                                    contract.status_pagamento,
-                                  )
-                                }
-                                className="bg-transparent border-gray-600 hover:bg-gray-700 w-full"
-                              >
-                                <Edit className="w-4 h-4 mr-2" />
-                                Editar Status
-                              </Button>
-                            )}
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))
+                          </CardContent>
+                        </Card>
+                      )
+                    })
                   )}
                 </div>
               </>

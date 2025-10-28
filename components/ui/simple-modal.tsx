@@ -56,7 +56,7 @@ export function SimpleModal({
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/80 animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-black/80 animate-in fade-in duration-200">
       <div
         ref={modalRef}
         className={`relative w-full ${maxWidth} bg-slate-900 border border-slate-700 rounded-lg shadow-2xl animate-in zoom-in-95 duration-200`}
@@ -150,7 +150,7 @@ export function SimpleAlertModal({
   }
 
   return (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/80 animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-black/80 animate-in fade-in duration-200">
       <div
         ref={modalRef}
         className="relative w-full max-w-md bg-slate-900 border border-slate-700 rounded-lg shadow-2xl animate-in zoom-in-95 duration-200"

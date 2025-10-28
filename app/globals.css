@@ -1,8 +1,6 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
-@custom-variant dark (&:is(.dark *));
-
 :root {
   --background: 222 47% 11%;
   --foreground: 210 40% 98%;
@@ -75,7 +73,6 @@
 }
 
 @theme inline {
-  /* optional: --font-sans, --font-serif, --font-mono if they are applied in the layout.tsx */
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -120,55 +117,6 @@
   }
   body {
     @apply bg-background text-foreground;
-  }
-
-  /* Estilos para Select e DropdownMenu com fundo sólido cinza */
-  [role="listbox"],
-  [role="menu"],
-  [data-radix-popper-content-wrapper] {
-    background-color: rgb(30 41 59) !important; /* slate-800 */
-    border: 1px solid rgb(51 65 85) !important; /* slate-700 */
-  }
-
-  [data-radix-select-content] {
-    background-color: rgb(30 41 59) !important; /* slate-800 */
-    border: 1px solid rgb(51 65 85) !important; /* slate-700 */
-    max-height: 15rem !important; /* max-h-60 */
-    z-index: 9999 !important;
-  }
-
-  [data-radix-dropdown-menu-content] {
-    background-color: rgb(30 41 59) !important; /* slate-800 */
-    border: 1px solid rgb(51 65 85) !important; /* slate-700 */
-    z-index: 9999 !important;
-  }
-
-  [data-radix-select-viewport] {
-    max-height: 14rem !important;
-  }
-
-  /* Estilos para Dialog e AlertDialog com fundo sólido cinza */
-  [data-radix-dialog-content],
-  [data-radix-alert-dialog-content] {
-    background-color: rgb(30 41 59) !important; /* slate-800 */
-    border: 1px solid rgb(51 65 85) !important; /* slate-700 */
-    color: rgb(248 250 252) !important; /* slate-50 */
-  }
-
-  [data-radix-dialog-overlay],
-  [data-radix-alert-dialog-overlay] {
-    background-color: rgba(0, 0, 0, 0.75) !important;
-  }
-
-  /* Garantir que títulos e descrições dos modais sejam visíveis */
-  [data-slot="dialog-title"],
-  [data-slot="alert-dialog-title"] {
-    color: rgb(248 250 252) !important; /* slate-50 */
-  }
-
-  [data-slot="dialog-description"],
-  [data-slot="alert-dialog-description"] {
-    color: rgb(203 213 225) !important; /* slate-300 */
   }
 }
 
