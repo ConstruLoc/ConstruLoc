@@ -266,7 +266,22 @@ export default function PagamentosPage() {
     setFilteredContracts(filtered)
   }
 
-  const getStatusColor = (status: string) => {
+  const isPaymentOverdue = (dataFim: string, statusPagamento: string) => {
+    if (statusPagamento !== "pendente") {
+      return false
+    }
+    const hoje = new Date()
+    hoje.setHours(0, 0, 0, 0) // Zerar horas para comparação apenas de data
+    const fim = new Date(dataFim)
+    fim.setHours(0, 0, 0, 0)
+    return fim < hoje
+  }
+
+  const getStatusColor = (status: string, dataFim?: string) => {
+    if (dataFim && status === "pendente" && isPaymentOverdue(dataFim, status)) {
+      return "bg-red-500/20 text-red-400 border-red-500/30"
+    }
+
     switch (status) {
       case "pago":
         return "bg-green-500/20 text-green-400 border-green-500/30"
@@ -281,7 +296,11 @@ export default function PagamentosPage() {
     }
   }
 
-  const getStatusLabel = (status: string) => {
+  const getStatusLabel = (status: string, dataFim?: string) => {
+    if (dataFim && status === "pendente" && isPaymentOverdue(dataFim, status)) {
+      return "Atrasado"
+    }
+
     switch (status) {
       case "pago":
         return "Pago"
@@ -548,8 +567,8 @@ export default function PagamentosPage() {
                               </TableCell>
                               <TableCell>
                                 <div className="space-y-1">
-                                  <Badge className={getStatusColor(contract.status_pagamento)}>
-                                    {getStatusLabel(contract.status_pagamento)}
+                                  <Badge className={getStatusColor(contract.status_pagamento, contract.data_fim)}>
+                                    {getStatusLabel(contract.status_pagamento, contract.data_fim)}
                                   </Badge>
                                   {pendingInfo && (
                                     <div className="text-xs text-yellow-400 font-medium">
@@ -666,8 +685,8 @@ export default function PagamentosPage() {
                               <div className="flex justify-between items-center">
                                 <span className="text-muted-foreground">Status:</span>
                                 <div className="text-right space-y-1">
-                                  <Badge className={getStatusColor(contract.status_pagamento)}>
-                                    {getStatusLabel(contract.status_pagamento)}
+                                  <Badge className={getStatusColor(contract.status_pagamento, contract.data_fim)}>
+                                    {getStatusLabel(contract.status_pagamento, contract.data_fim)}
                                   </Badge>
                                   {pendingInfo && (
                                     <div className="text-xs text-yellow-400 font-medium">

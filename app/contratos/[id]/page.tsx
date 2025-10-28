@@ -120,7 +120,60 @@ export default async function ContractDetailsPage({ params }: { params: Promise<
     return Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1
   }
 
+  const calculatePendingMonths = (dataInicio: string, dataFim: string, statusPagamento: string) => {
+    if (statusPagamento !== "pendente") {
+      return null
+    }
+
+    const inicio = new Date(dataInicio)
+    const fim = new Date(dataFim)
+    const hoje = new Date()
+
+    // Se o contrato ainda não começou, não há meses pendentes
+    if (inicio > hoje) {
+      return null
+    }
+
+    // Calcular quantos meses se passaram desde o início
+    const mesesPassados = []
+    const dataAtual = new Date(inicio)
+
+    while (dataAtual <= hoje && dataAtual <= fim) {
+      mesesPassados.push({
+        mes: dataAtual.toLocaleDateString("pt-BR", { month: "long" }),
+        ano: dataAtual.getFullYear(),
+        mesAno: `${dataAtual.toLocaleDateString("pt-BR", { month: "short" })}/${dataAtual.getFullYear()}`,
+      })
+      dataAtual.setMonth(dataAtual.getMonth() + 1)
+    }
+
+    if (mesesPassados.length === 0) {
+      return null
+    }
+
+    return {
+      quantidade: mesesPassados.length,
+      meses: mesesPassados,
+      mensagem: `${mesesPassados.length} ${mesesPassados.length === 1 ? "mês atrasado" : "meses atrasados"}`,
+    }
+  }
+
+  const isPaymentOverdue = (dataFim: string, statusPagamento: string) => {
+    if (statusPagamento !== "pendente") {
+      return false
+    }
+    const hoje = new Date()
+    hoje.setHours(0, 0, 0, 0)
+    const fim = new Date(dataFim)
+    fim.setHours(0, 0, 0, 0)
+    return fim < hoje
+  }
+
   const getPaymentStatusColor = (status: string) => {
+    if (status === "pendente" && isPaymentOverdue(contract.data_fim, status)) {
+      return "bg-red-500/20 text-red-400 border-red-500/30"
+    }
+
     switch (status) {
       case "pago":
         return "bg-green-500/20 text-green-400 border-green-500/30"
@@ -136,6 +189,10 @@ export default async function ContractDetailsPage({ params }: { params: Promise<
   }
 
   const getPaymentStatusLabel = (status: string) => {
+    if (status === "pendente" && isPaymentOverdue(contract.data_fim, status)) {
+      return "Atrasado"
+    }
+
     switch (status) {
       case "pago":
         return "Pago"
@@ -149,6 +206,11 @@ export default async function ContractDetailsPage({ params }: { params: Promise<
         return status
     }
   }
+
+  const pendingMonths =
+    contract.pagamentos && contract.pagamentos.length > 0
+      ? calculatePendingMonths(contract.data_inicio, contract.data_fim, contract.pagamentos[0].status)
+      : null
 
   return (
     <MainLayout>
@@ -302,6 +364,14 @@ export default async function ContractDetailsPage({ params }: { params: Promise<
                     <Badge className={getPaymentStatusColor(contract.pagamentos[0].status)}>
                       {getPaymentStatusLabel(contract.pagamentos[0].status)}
                     </Badge>
+                    {pendingMonths && (
+                      <div className="mt-2">
+                        <p className="text-sm text-red-400 font-medium">{pendingMonths.mensagem}</p>
+                        <div className="mt-1 text-xs text-slate-400">
+                          {pendingMonths.meses.map((m) => m.mesAno).join(", ")}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
 

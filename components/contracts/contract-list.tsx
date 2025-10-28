@@ -18,7 +18,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { SimpleActionsMenu } from "@/components/contracts/simple-actions-menu"
+import { CustomActionsMenu } from "@/components/contracts/custom-actions-menu"
 import { Plus, Search, FileText, AlertTriangle, XCircle } from "lucide-react"
 import Link from "next/link"
 import { useToast } from "@/hooks/use-toast"
@@ -116,7 +116,20 @@ export function ContractList() {
     setFilteredContracts(filtered)
   }
 
-  const getStatusColor = (status: string) => {
+  const isContractOverdue = (dataFim: string, status: string) => {
+    if (status === "pago" || status === "cancelado" || status === "finalizado") {
+      return false
+    }
+    const hoje = new Date()
+    const fim = new Date(dataFim)
+    return fim < hoje
+  }
+
+  const getStatusColor = (status: string, dataFim?: string) => {
+    if (dataFim && isContractOverdue(dataFim, status)) {
+      return "bg-red-500/20 text-red-400 border-red-500/30"
+    }
+
     switch (status) {
       case "pago":
         return "bg-green-500/20 text-green-400 border-green-500/30"
@@ -133,7 +146,11 @@ export function ContractList() {
     }
   }
 
-  const getStatusLabel = (status: string) => {
+  const getStatusLabel = (status: string, dataFim?: string) => {
+    if (dataFim && isContractOverdue(dataFim, status)) {
+      return "Atrasado"
+    }
+
     switch (status) {
       case "pago":
         return "Pago"
@@ -477,10 +494,12 @@ export function ContractList() {
                           R$ {contract.valor_total?.toFixed(2) || "0,00"}
                         </TableCell>
                         <TableCell>
-                          <Badge className={getStatusColor(contract.status)}>{getStatusLabel(contract.status)}</Badge>
+                          <Badge className={getStatusColor(contract.status, contract.data_fim)}>
+                            {getStatusLabel(contract.status, contract.data_fim)}
+                          </Badge>
                         </TableCell>
                         <TableCell>
-                          <SimpleActionsMenu
+                          <CustomActionsMenu
                             contractId={contract.id}
                             contractNumber={contract.numero_contrato}
                             contractStatus={contract.status}
@@ -513,7 +532,7 @@ export function ContractList() {
                             <div className="text-sm text-slate-400">{contract.clientes.empresa}</div>
                           )}
                         </div>
-                        <SimpleActionsMenu
+                        <CustomActionsMenu
                           contractId={contract.id}
                           contractNumber={contract.numero_contrato}
                           contractStatus={contract.status}
@@ -540,7 +559,9 @@ export function ContractList() {
                         </div>
                         <div className="flex justify-between items-center">
                           <span className="text-slate-400">Status:</span>
-                          <Badge className={getStatusColor(contract.status)}>{getStatusLabel(contract.status)}</Badge>
+                          <Badge className={getStatusColor(contract.status, contract.data_fim)}>
+                            {getStatusLabel(contract.status, contract.data_fim)}
+                          </Badge>
                         </div>
                       </div>
                     </CardContent>
