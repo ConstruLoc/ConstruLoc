@@ -160,7 +160,7 @@ export function ContractCreationForm({ contract, onSuccess }: ContractCreationFo
 
       console.log("[v0] Equipments fetched:", data?.length || 0)
 
-      const equipmentsWithStock = (data || []).map((equipment) => ({
+      let equipmentsWithStock = (data || []).map((equipment) => ({
         ...equipment,
         valor_diario: equipment.valor_diario || 0,
         valor_semanal: equipment.valor_semanal || 0,
@@ -171,6 +171,20 @@ export function ContractCreationForm({ contract, onSuccess }: ContractCreationFo
         modelo: equipment.modelo || "Sem modelo",
         imagem_url: equipment.imagem_url || null,
       }))
+
+      // If editing a contract, add back the quantities from the current contract items
+      if (contract?.id && contract?.itens_contrato) {
+        equipmentsWithStock = equipmentsWithStock.map((equipment) => {
+          const contractItem = contract.itens_contrato.find((item: any) => item.equipamento_id === equipment.id)
+          if (contractItem) {
+            return {
+              ...equipment,
+              stock_count: equipment.stock_count + contractItem.quantidade,
+            }
+          }
+          return equipment
+        })
+      }
 
       setEquipments(equipmentsWithStock)
     } catch (error) {
@@ -409,6 +423,8 @@ export function ContractCreationForm({ contract, onSuccess }: ContractCreationFo
       let contractId: string
 
       if (contract?.id) {
+        const datesChanged = contract.data_inicio !== formData.data_inicio || contract.data_fim !== formData.data_fim
+
         // Editing an existing contract
         const { data: oldItems } = await supabase
           .from("itens_contrato")
@@ -431,6 +447,31 @@ export function ContractCreationForm({ contract, onSuccess }: ContractCreationFo
 
         // Delete old items before inserting new ones
         await supabase.from("itens_contrato").delete().eq("contrato_id", contractId)
+
+        if (datesChanged) {
+          console.log("[v0] Dates changed, regenerating monthly payments...")
+
+          // Delete old monthly payments
+          await supabase.from("pagamentos_mensais").delete().eq("contrato_id", contractId)
+
+          // Generate new monthly payments
+          const generateResponse = await fetch("/api/generate-monthly-payments", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              contratoId: contractId,
+              dataInicio: formData.data_inicio,
+              dataFim: formData.data_fim,
+              valorTotal,
+            }),
+          })
+
+          if (!generateResponse.ok) {
+            console.error("[v0] Error regenerating monthly payments")
+          } else {
+            console.log("[v0] Monthly payments regenerated successfully")
+          }
+        }
 
         await supabase
           .from("pagamentos")
@@ -455,6 +496,21 @@ export function ContractCreationForm({ contract, onSuccess }: ContractCreationFo
         }
 
         contractId = data.id
+
+        const generateResponse = await fetch("/api/generate-monthly-payments", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            contratoId: contractId,
+            dataInicio: formData.data_inicio,
+            dataFim: formData.data_fim,
+            valorTotal,
+          }),
+        })
+
+        if (!generateResponse.ok) {
+          console.error("[v0] Error generating monthly payments")
+        }
 
         // Create associated payment entry
         const paymentData = {
@@ -827,9 +883,13 @@ export function ContractCreationForm({ contract, onSuccess }: ContractCreationFo
                                   type="button"
                                   variant="outline"
                                   size="sm"
-                                  onClick={() => updateItemQuantity(item.equipamento_id, item.quantidade - 1)}
+                                  onClick={(e) => {
+                                    e.preventDefault()
+                                    e.stopPropagation()
+                                    updateItemQuantity(item.equipamento_id, item.quantidade - 1)
+                                  }}
                                   disabled={item.quantidade <= 1}
-                                  className="h-6 w-6 p-0 bg-gray-600 border-gray-500 hover:bg-gray-500 text-white"
+                                  className="h-6 w-6 p-0 bg-gray-600 border-gray-500 hover:bg-gray-500 text-white disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
                                   -
                                 </Button>
@@ -843,15 +903,20 @@ export function ContractCreationForm({ contract, onSuccess }: ContractCreationFo
                                     const num = val === "" ? 1 : Number.parseInt(val)
                                     updateItemQuantity(item.equipamento_id, num)
                                   }}
+                                  onClick={(e) => e.stopPropagation()}
                                   className="h-6 w-12 text-center bg-gray-600 border-gray-500 text-white text-xs p-0"
                                 />
                                 <Button
                                   type="button"
                                   variant="outline"
                                   size="sm"
-                                  onClick={() => updateItemQuantity(item.equipamento_id, item.quantidade + 1)}
+                                  onClick={(e) => {
+                                    e.preventDefault()
+                                    e.stopPropagation()
+                                    updateItemQuantity(item.equipamento_id, item.quantidade + 1)
+                                  }}
                                   disabled={item.quantidade >= (item.equipamento?.stock_count || 1)}
-                                  className="h-6 w-6 p-0 bg-gray-600 border-gray-500 hover:bg-gray-500 text-white"
+                                  className="h-6 w-6 p-0 bg-gray-600 border-gray-500 hover:bg-gray-500 text-white disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
                                   +
                                 </Button>

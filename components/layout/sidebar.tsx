@@ -17,7 +17,6 @@ import {
   ChevronLeft,
   ChevronRight,
   FolderTree,
-  BookOpenCheck,
 } from "lucide-react"
 
 const navigationSections = [
@@ -44,11 +43,11 @@ const navigationSections = [
         href: "/categorias",
         icon: FolderTree,
       },
-      {
-        name: "Catálogo",
-        href: "/catalogo",
-        icon: BookOpenCheck,
-      },
+      // {
+      //   name: "Catálogo",
+      //   href: "/catalogo",
+      //   icon: BookOpenCheck,
+      // },
     ],
   },
   {

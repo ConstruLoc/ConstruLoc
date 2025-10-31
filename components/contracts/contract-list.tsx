@@ -401,6 +401,10 @@ export function ContractList() {
     }
   }
 
+  const handleRowClick = (contractId: string) => {
+    router.push(`/contratos/${contractId}`)
+  }
+
   if (isLoading) {
     return <div className="flex justify-center p-8">Carregando contratos...</div>
   }
@@ -419,7 +423,7 @@ export function ContractList() {
                 <CardDescription className="text-slate-400">Gerencie todos os contratos de locação</CardDescription>
               </div>
               <Button asChild className="bg-orange-600 hover:bg-orange-700 w-full sm:w-auto">
-                <Link href="/contratos/criar">
+                <Link href="/contratos/novo">
                   <Plus className="mr-2 h-4 w-4" />
                   Novo Contrato
                 </Link>
@@ -474,7 +478,11 @@ export function ContractList() {
                     </TableRow>
                   ) : (
                     filteredContracts.map((contract) => (
-                      <TableRow key={contract.id} className="border-slate-700 hover:bg-slate-700/50">
+                      <TableRow
+                        key={contract.id}
+                        className="border-slate-700 hover:bg-slate-700/50 cursor-pointer"
+                        onClick={() => handleRowClick(contract.id)}
+                      >
                         <TableCell className="font-medium text-orange-400">{contract.numero_contrato}</TableCell>
                         <TableCell>
                           <div>
@@ -499,16 +507,18 @@ export function ContractList() {
                           </Badge>
                         </TableCell>
                         <TableCell>
-                          <CustomActionsMenu
-                            contractId={contract.id}
-                            contractNumber={contract.numero_contrato}
-                            contractStatus={contract.status}
-                            onViewDetails={() => router.push(`/contratos/${contract.id}`)}
-                            onEdit={() => router.push(`/contratos/${contract.id}/editar`)}
-                            onDownloadPDF={() => handleDownloadPDF(contract.id, contract.numero_contrato)}
-                            onCancel={() => handleCancelClick(contract.id, contract.numero_contrato)}
-                            onDelete={() => handleDeleteClick(contract.id, contract.numero_contrato)}
-                          />
+                          <div onClick={(e) => e.stopPropagation()}>
+                            <CustomActionsMenu
+                              contractId={contract.id}
+                              contractNumber={contract.numero_contrato}
+                              contractStatus={contract.status}
+                              onViewDetails={() => router.push(`/contratos/${contract.id}`)}
+                              onEdit={() => router.push(`/contratos/${contract.id}/editar`)}
+                              onDownloadPDF={() => handleDownloadPDF(contract.id, contract.numero_contrato)}
+                              onCancel={() => handleCancelClick(contract.id, contract.numero_contrato)}
+                              onDelete={() => handleDeleteClick(contract.id, contract.numero_contrato)}
+                            />
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))
@@ -522,7 +532,11 @@ export function ContractList() {
                 <div className="text-center py-8 text-slate-400">Nenhum contrato encontrado</div>
               ) : (
                 filteredContracts.map((contract) => (
-                  <Card key={contract.id} className="bg-slate-900 border-slate-700">
+                  <Card
+                    key={contract.id}
+                    className="bg-slate-900 border-slate-700 cursor-pointer hover:bg-slate-800/50 transition-colors"
+                    onClick={() => handleRowClick(contract.id)}
+                  >
                     <CardContent className="p-4">
                       <div className="flex items-start justify-between mb-3">
                         <div className="flex-1">
@@ -532,16 +546,18 @@ export function ContractList() {
                             <div className="text-sm text-slate-400">{contract.clientes.empresa}</div>
                           )}
                         </div>
-                        <CustomActionsMenu
-                          contractId={contract.id}
-                          contractNumber={contract.numero_contrato}
-                          contractStatus={contract.status}
-                          onViewDetails={() => router.push(`/contratos/${contract.id}`)}
-                          onEdit={() => router.push(`/contratos/${contract.id}/editar`)}
-                          onDownloadPDF={() => handleDownloadPDF(contract.id, contract.numero_contrato)}
-                          onCancel={() => handleCancelClick(contract.id, contract.numero_contrato)}
-                          onDelete={() => handleDeleteClick(contract.id, contract.numero_contrato)}
-                        />
+                        <div onClick={(e) => e.stopPropagation()}>
+                          <CustomActionsMenu
+                            contractId={contract.id}
+                            contractNumber={contract.numero_contrato}
+                            contractStatus={contract.status}
+                            onViewDetails={() => router.push(`/contratos/${contract.id}`)}
+                            onEdit={() => router.push(`/contratos/${contract.id}/editar`)}
+                            onDownloadPDF={() => handleDownloadPDF(contract.id, contract.numero_contrato)}
+                            onCancel={() => handleCancelClick(contract.id, contract.numero_contrato)}
+                            onDelete={() => handleDeleteClick(contract.id, contract.numero_contrato)}
+                          />
+                        </div>
                       </div>
                       <div className="space-y-2 text-sm">
                         <div className="flex justify-between">

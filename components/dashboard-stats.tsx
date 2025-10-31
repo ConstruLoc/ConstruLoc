@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Package, Users, FileText, DollarSign, TrendingUp, TrendingDown } from "lucide-react"
@@ -14,6 +15,7 @@ interface Stats {
 }
 
 export function DashboardStats() {
+  const router = useRouter()
   const [stats, setStats] = useState<Stats>({
     equipamentosDisponiveis: 0,
     clientesAtivos: 0,
@@ -73,6 +75,7 @@ export function DashboardStats() {
       color: "text-orange-400",
       bgColor: "bg-orange-500/10",
       borderColor: "border-orange-500",
+      href: "/equipamentos",
     },
     {
       title: "Clientes Ativos",
@@ -84,6 +87,7 @@ export function DashboardStats() {
       color: "text-orange-400",
       bgColor: "bg-orange-500/10",
       borderColor: "border-orange-500",
+      href: "/clientes",
     },
     {
       title: "Contratos Ativos",
@@ -95,6 +99,7 @@ export function DashboardStats() {
       color: "text-orange-400",
       bgColor: "bg-orange-500/10",
       borderColor: "border-orange-500",
+      href: "/contratos",
     },
     {
       title: "Receita Mensal",
@@ -106,6 +111,7 @@ export function DashboardStats() {
       color: "text-orange-400",
       bgColor: "bg-orange-500/10",
       borderColor: "border-orange-500",
+      href: "/pagamentos",
     },
   ]
 
@@ -135,7 +141,8 @@ export function DashboardStats() {
         return (
           <Card
             key={stat.title}
-            className={`border-l-4 ${stat.borderColor} hover:shadow-lg hover:shadow-orange-500/20 hover:border-orange-400 transition-all duration-200 bg-gray-800 border-gray-700`}
+            onClick={() => router.push(stat.href)}
+            className={`border-l-4 ${stat.borderColor} hover:shadow-lg hover:shadow-orange-500/20 hover:border-orange-400 transition-all duration-200 bg-gray-800 border-gray-700 cursor-pointer`}
           >
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium text-gray-300">{stat.title}</CardTitle>

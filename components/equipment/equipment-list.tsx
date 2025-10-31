@@ -1,8 +1,7 @@
 "use client"
 
-import { Select } from "@/components/ui/select"
+import { Select, SelectTrigger, SelectValue, SelectContent } from "@/components/ui/select"
 
-import { SelectItem, SelectContent, SelectValue, SelectTrigger } from "@/components/ui/select"
 import { useState, useEffect, useRef } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
@@ -43,6 +42,7 @@ interface Equipment {
   marca: string
   modelo: string
   valor_diario: number
+  valor_mensal?: number
   status: string
   localizacao: string
   categoria_id: string
@@ -341,33 +341,23 @@ export function EquipmentList() {
                       <SelectValue placeholder="Todos os status" />
                     </SelectTrigger>
                     <SelectContent className="bg-gray-800 border-gray-700">
-                      <SelectItem value="all" className="text-white hover:bg-gray-700">
-                        Todos os status
-                      </SelectItem>
-                      <SelectItem value="disponivel" className="text-white hover:bg-gray-700">
-                        <div className="flex items-center gap-2">
-                          <span className="text-emerald-400">🟢</span>
-                          Disponível
-                        </div>
-                      </SelectItem>
-                      <SelectItem value="locado" className="text-white hover:bg-gray-700">
-                        <div className="flex items-center gap-2">
-                          <span className="text-blue-400">🔵</span>
-                          Locado
-                        </div>
-                      </SelectItem>
-                      <SelectItem value="manutencao" className="text-white hover:bg-gray-700">
-                        <div className="flex items-center gap-2">
-                          <span className="text-amber-400">🟡</span>
-                          Manutenção
-                        </div>
-                      </SelectItem>
-                      <SelectItem value="inativo" className="text-white hover:bg-gray-700">
-                        <div className="flex items-center gap-2">
-                          <span className="text-gray-400">⚫</span>
-                          Inativo
-                        </div>
-                      </SelectItem>
+                      <div className="text-white hover:bg-gray-700 p-2">Todos os status</div>
+                      <div className="text-white hover:bg-gray-700 p-2 flex items-center gap-2">
+                        <span className="text-emerald-400">🟢</span>
+                        Disponível
+                      </div>
+                      <div className="text-white hover:bg-gray-700 p-2 flex items-center gap-2">
+                        <span className="text-blue-400">🔵</span>
+                        Locado
+                      </div>
+                      <div className="text-white hover:bg-gray-700 p-2 flex items-center gap-2">
+                        <span className="text-amber-400">🟡</span>
+                        Manutenção
+                      </div>
+                      <div className="text-white hover:bg-gray-700 p-2 flex items-center gap-2">
+                        <span className="text-gray-400">⚫</span>
+                        Inativo
+                      </div>
                     </SelectContent>
                   </Select>
                 </Button>
@@ -388,13 +378,11 @@ export function EquipmentList() {
                       <SelectValue placeholder="Todas as categorias" />
                     </SelectTrigger>
                     <SelectContent className="bg-gray-800 border-gray-700">
-                      <SelectItem value="all" className="text-white hover:bg-gray-700">
-                        Todas as categorias
-                      </SelectItem>
+                      <div className="text-white hover:bg-gray-700 p-2">Todas as categorias</div>
                       {categories.map((category) => (
-                        <SelectItem key={category.id} value={category.id} className="text-white hover:bg-gray-700">
+                        <div key={category.id} className="text-white hover:bg-gray-700 p-2">
                           {category.nome}
-                        </SelectItem>
+                        </div>
                       ))}
                     </SelectContent>
                   </Select>
@@ -538,9 +526,13 @@ export function EquipmentList() {
                   <div className="pt-2 md:pt-4 border-t border-gray-600">
                     <div>
                       <p className="text-lg md:text-2xl font-bold text-white">
-                        R$ {equipment.valor_diario?.toFixed(2) || "0,00"}
+                        {equipment.valor_mensal && equipment.valor_mensal > 0
+                          ? `R$ ${equipment.valor_mensal.toFixed(2)}`
+                          : `R$ ${equipment.valor_diario?.toFixed(2) || "0,00"}`}
                       </p>
-                      <p className="text-xs text-gray-400">por dia</p>
+                      <p className="text-xs text-gray-400">
+                        {equipment.valor_mensal && equipment.valor_mensal > 0 ? "por mês" : "por dia"}
+                      </p>
                     </div>
                   </div>
                 </CardContent>

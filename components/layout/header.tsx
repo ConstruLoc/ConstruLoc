@@ -45,7 +45,6 @@ export function Header({ title = "Dashboard" }: HeaderProps) {
         profileButtonRef.current &&
         !profileButtonRef.current.contains(target)
       ) {
-        console.log("[v0] Closing profile menu - clicked outside")
         setShowProfileMenu(false)
       }
 
@@ -55,7 +54,6 @@ export function Header({ title = "Dashboard" }: HeaderProps) {
         notificationsButtonRef.current &&
         !notificationsButtonRef.current.contains(target)
       ) {
-        console.log("[v0] Closing notifications - clicked outside")
         setShowNotifications(false)
       }
     }
@@ -65,7 +63,6 @@ export function Header({ title = "Dashboard" }: HeaderProps) {
   }, [])
 
   const handleSignOut = () => {
-    console.log("[v0] Sign out clicked")
     if (typeof window !== "undefined") {
       localStorage.removeItem("construloc_current_user")
       localStorage.removeItem("construloc_remember_me")
@@ -75,33 +72,27 @@ export function Header({ title = "Dashboard" }: HeaderProps) {
   }
 
   const handleNavigateToProfile = () => {
-    console.log("[v0] Navigate to profile clicked")
     setShowProfileMenu(false)
     router.push("/perfil")
   }
 
   const handleNavigateToSettings = () => {
-    console.log("[v0] Navigate to settings clicked")
     setShowProfileMenu(false)
     router.push("/configuracoes")
   }
 
   const toggleNotifications = (e: React.MouseEvent) => {
     e.stopPropagation()
-    console.log("[v0] Notifications button clicked, current state:", showNotifications)
     const newState = !showNotifications
     setShowNotifications(newState)
     setShowProfileMenu(false)
-    console.log("[v0] Notifications new state:", newState)
   }
 
   const toggleProfileMenu = (e: React.MouseEvent) => {
     e.stopPropagation()
-    console.log("[v0] Profile menu button clicked, current state:", showProfileMenu)
     const newState = !showProfileMenu
     setShowProfileMenu(newState)
     setShowNotifications(false)
-    console.log("[v0] Profile menu new state:", newState)
   }
 
   const getUserInitials = () => {
@@ -116,31 +107,15 @@ export function Header({ title = "Dashboard" }: HeaderProps) {
     return user?.email?.slice(0, 2).toUpperCase() || "AD"
   }
 
-  console.log("[v0] Header render - showProfileMenu:", showProfileMenu, "showNotifications:", showNotifications)
-
   return (
     <header className="bg-gray-800 border-b border-gray-700 px-6 py-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="flex items-center justify-center w-10 h-10 bg-orange-500 rounded-lg">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="w-6 h-6 text-white"
-            >
-              <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-              <polyline points="9 22 9 12 15 12 15 22" />
-            </svg>
-          </div>
-          <div className="flex flex-col">
-            <h1 className="text-xl font-bold text-orange-500">ConstruLoc</h1>
-            <p className="text-sm text-gray-400">Locações de equipamentos</p>
-          </div>
+          <img
+            src="/images/design-mode/image.png"
+            alt="ConstruLoc - Locações de Equipamentos"
+            className="h-12 w-auto object-contain"
+          />
         </div>
 
         <div className="flex items-center gap-4">

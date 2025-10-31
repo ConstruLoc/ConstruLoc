@@ -3,21 +3,11 @@ import { createClient } from "@/lib/supabase/server"
 import { MainLayout } from "@/components/layout/main-layout"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import {
-  Edit,
-  ArrowLeft,
-  User,
-  Calendar,
-  DollarSign,
-  FileText,
-  Mail,
-  Phone,
-  Hash,
-  CreditCard,
-  CheckCircle2,
-  Clock,
-} from "lucide-react"
+import { Edit, ArrowLeft, User, Calendar, DollarSign, FileText, Mail, Phone, Hash } from "lucide-react"
 import Link from "next/link"
+import { markMonthAsPaid, updateMonthlyPaymentsStatus, generateMonthlyPayments } from "@/lib/actions/monthly-payments"
+import { ContractCreationForm } from "@/components/contracts/contract-creation-form"
+import { MonthlyPaymentsSection } from "@/components/contracts/monthly-payments-section"
 
 function isValidUUID(str: string) {
   const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
@@ -27,8 +17,12 @@ function isValidUUID(str: string) {
 export default async function ContractDetailsPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
 
-  if (!isValidUUID(id)) {
-    notFound()
+  if (id === "criar" || id === "novo") {
+    return (
+      <MainLayout title="Novo Contrato" showBackButton={true}>
+        <ContractCreationForm />
+      </MainLayout>
+    )
   }
 
   const supabase = await createClient()
@@ -53,20 +47,42 @@ export default async function ContractDetailsPage({ params }: { params: Promise<
           marca,
           modelo
         )
-      ),
-      pagamentos (
-        id,
-        status,
-        data_pagamento,
-        valor
       )
     `)
     .eq("id", id)
     .single()
 
   if (error || !contract) {
-    console.log("[v0] Contract not found error:", error)
     notFound()
+  }
+
+  const { data: monthlyPayments } = await supabase
+    .from("pagamentos_mensais")
+    .select("*")
+    .eq("contrato_id", id)
+    .order("ano", { ascending: true })
+    .order("mes", { ascending: true })
+
+  // Gerar pagamentos mensais se não existirem
+  if (!monthlyPayments || monthlyPayments.length === 0) {
+    await generateMonthlyPayments(id, contract.data_inicio, contract.data_fim, contract.valor_total)
+  }
+
+  // Atualizar status dos pagamentos
+  await updateMonthlyPaymentsStatus(id)
+
+  // Buscar pagamentos atualizados
+  const { data: updatedMonthlyPayments } = await supabase
+    .from("pagamentos_mensais")
+    .select("*")
+    .eq("contrato_id", id)
+    .order("ano", { ascending: true })
+    .order("mes", { ascending: true })
+
+  // Server action para marcar pagamento como pago
+  async function handleMarkAsPaid(paymentId: string) {
+    "use server"
+    return await markMonthAsPaid(paymentId)
   }
 
   const getStatusColor = (status: string) => {
@@ -119,98 +135,6 @@ export default async function ContractDetailsPage({ params }: { params: Promise<
     const diffTime = Math.abs(end.getTime() - start.getTime())
     return Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1
   }
-
-  const calculatePendingMonths = (dataInicio: string, dataFim: string, statusPagamento: string) => {
-    if (statusPagamento !== "pendente") {
-      return null
-    }
-
-    const inicio = new Date(dataInicio)
-    const fim = new Date(dataFim)
-    const hoje = new Date()
-
-    // Se o contrato ainda não começou, não há meses pendentes
-    if (inicio > hoje) {
-      return null
-    }
-
-    // Calcular quantos meses se passaram desde o início
-    const mesesPassados = []
-    const dataAtual = new Date(inicio)
-
-    while (dataAtual <= hoje && dataAtual <= fim) {
-      mesesPassados.push({
-        mes: dataAtual.toLocaleDateString("pt-BR", { month: "long" }),
-        ano: dataAtual.getFullYear(),
-        mesAno: `${dataAtual.toLocaleDateString("pt-BR", { month: "short" })}/${dataAtual.getFullYear()}`,
-      })
-      dataAtual.setMonth(dataAtual.getMonth() + 1)
-    }
-
-    if (mesesPassados.length === 0) {
-      return null
-    }
-
-    return {
-      quantidade: mesesPassados.length,
-      meses: mesesPassados,
-      mensagem: `${mesesPassados.length} ${mesesPassados.length === 1 ? "mês atrasado" : "meses atrasados"}`,
-    }
-  }
-
-  const isPaymentOverdue = (dataFim: string, statusPagamento: string) => {
-    if (statusPagamento !== "pendente") {
-      return false
-    }
-    const hoje = new Date()
-    hoje.setHours(0, 0, 0, 0)
-    const fim = new Date(dataFim)
-    fim.setHours(0, 0, 0, 0)
-    return fim < hoje
-  }
-
-  const getPaymentStatusColor = (status: string) => {
-    if (status === "pendente" && isPaymentOverdue(contract.data_fim, status)) {
-      return "bg-red-500/20 text-red-400 border-red-500/30"
-    }
-
-    switch (status) {
-      case "pago":
-        return "bg-green-500/20 text-green-400 border-green-500/30"
-      case "pendente":
-        return "bg-yellow-500/20 text-yellow-400 border-yellow-500/30"
-      case "parcial":
-        return "bg-blue-500/20 text-blue-400 border-blue-500/30"
-      case "cancelado":
-        return "bg-red-500/20 text-red-400 border-red-500/30"
-      default:
-        return "bg-gray-500/20 text-gray-400 border-gray-500/30"
-    }
-  }
-
-  const getPaymentStatusLabel = (status: string) => {
-    if (status === "pendente" && isPaymentOverdue(contract.data_fim, status)) {
-      return "Atrasado"
-    }
-
-    switch (status) {
-      case "pago":
-        return "Pago"
-      case "pendente":
-        return "Pendente"
-      case "parcial":
-        return "Parcial"
-      case "cancelado":
-        return "Cancelado"
-      default:
-        return status
-    }
-  }
-
-  const pendingMonths =
-    contract.pagamentos && contract.pagamentos.length > 0
-      ? calculatePendingMonths(contract.data_inicio, contract.data_fim, contract.pagamentos[0].status)
-      : null
 
   return (
     <MainLayout>
@@ -349,72 +273,8 @@ export default async function ContractDetailsPage({ params }: { params: Promise<
             </div>
           </div>
 
-          {contract.pagamentos && contract.pagamentos.length > 0 && (
-            <div className="bg-slate-800 rounded-lg border border-slate-700 p-6">
-              <div className="flex items-center gap-2 mb-6">
-                <div className="h-1 w-12 bg-orange-500 rounded" />
-                <h2 className="text-lg font-semibold text-white">Informações de Pagamento</h2>
-              </div>
-
-              <div className="grid gap-6 lg:grid-cols-2">
-                <div className="flex items-start gap-3">
-                  <CreditCard className="h-5 w-5 text-orange-500 mt-0.5" />
-                  <div className="flex-1">
-                    <p className="text-xs text-slate-400 uppercase tracking-wide mb-1">Status do Pagamento</p>
-                    <Badge className={getPaymentStatusColor(contract.pagamentos[0].status)}>
-                      {getPaymentStatusLabel(contract.pagamentos[0].status)}
-                    </Badge>
-                    {pendingMonths && (
-                      <div className="mt-2">
-                        <p className="text-sm text-red-400 font-medium">{pendingMonths.mensagem}</p>
-                        <div className="mt-1 text-xs text-slate-400">
-                          {pendingMonths.meses.map((m) => m.mesAno).join(", ")}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {contract.pagamentos[0].data_pagamento && (
-                  <div className="flex items-start gap-3">
-                    <CheckCircle2 className="h-5 w-5 text-green-500 mt-0.5" />
-                    <div className="flex-1">
-                      <p className="text-xs text-slate-400 uppercase tracking-wide mb-1">Data de Pagamento</p>
-                      <p className="text-white">
-                        {new Date(contract.pagamentos[0].data_pagamento).toLocaleDateString("pt-BR", {
-                          day: "2-digit",
-                          month: "long",
-                          year: "numeric",
-                        })}
-                      </p>
-                    </div>
-                  </div>
-                )}
-
-                <div className="flex items-start gap-3">
-                  <DollarSign className="h-5 w-5 text-orange-500 mt-0.5" />
-                  <div className="flex-1">
-                    <p className="text-xs text-slate-400 uppercase tracking-wide mb-1">Valor do Pagamento</p>
-                    <p className="text-xl font-bold text-orange-500">
-                      R${" "}
-                      {contract.pagamentos[0].valor?.toFixed(2).replace(".", ",") ||
-                        contract.valor_total?.toFixed(2).replace(".", ",") ||
-                        "0,00"}
-                    </p>
-                  </div>
-                </div>
-
-                {contract.pagamentos[0].status === "pendente" && (
-                  <div className="flex items-start gap-3">
-                    <Clock className="h-5 w-5 text-yellow-500 mt-0.5" />
-                    <div className="flex-1">
-                      <p className="text-xs text-slate-400 uppercase tracking-wide mb-1">Situação</p>
-                      <p className="text-yellow-400">Aguardando pagamento</p>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
+          {updatedMonthlyPayments && updatedMonthlyPayments.length > 0 && (
+            <MonthlyPaymentsSection payments={updatedMonthlyPayments} onMarkAsPaid={handleMarkAsPaid} />
           )}
 
           {/* Equipamentos Locados */}
