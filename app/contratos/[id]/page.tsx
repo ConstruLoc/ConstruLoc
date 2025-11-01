@@ -5,7 +5,12 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Edit, ArrowLeft, User, Calendar, DollarSign, FileText, Mail, Phone, Hash } from "lucide-react"
 import Link from "next/link"
-import { markMonthAsPaid, updateMonthlyPaymentsStatus, generateMonthlyPayments } from "@/lib/actions/monthly-payments"
+import {
+  markMonthAsPaid,
+  updateMonthlyPaymentsStatus,
+  generateMonthlyPayments,
+  recalculateMonthlyPayments,
+} from "@/lib/actions/monthly-payments"
 import { ContractCreationForm } from "@/components/contracts/contract-creation-form"
 import { MonthlyPaymentsSection } from "@/components/contracts/monthly-payments-section"
 
@@ -83,6 +88,11 @@ export default async function ContractDetailsPage({ params }: { params: Promise<
   async function handleMarkAsPaid(paymentId: string) {
     "use server"
     return await markMonthAsPaid(paymentId)
+  }
+
+  async function handleRecalculatePayments() {
+    "use server"
+    return await recalculateMonthlyPayments(id)
   }
 
   const getStatusColor = (status: string) => {
@@ -274,7 +284,12 @@ export default async function ContractDetailsPage({ params }: { params: Promise<
           </div>
 
           {updatedMonthlyPayments && updatedMonthlyPayments.length > 0 && (
-            <MonthlyPaymentsSection payments={updatedMonthlyPayments} onMarkAsPaid={handleMarkAsPaid} />
+            <MonthlyPaymentsSection
+              payments={updatedMonthlyPayments}
+              onMarkAsPaid={handleMarkAsPaid}
+              onRecalculate={handleRecalculatePayments}
+              contractId={id}
+            />
           )}
 
           {/* Equipamentos Locados */}

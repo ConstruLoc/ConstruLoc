@@ -734,7 +734,7 @@ export function ContractCreationForm({ contract, onSuccess }: ContractCreationFo
 
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
-                      <Label className="text-gray-300 text-base md:text-sm">Valor Total (R$)</Label>
+                      <Label className="text-gray-300 text-base md:text-sm">Valor Mensal (R$)</Label>
                       <Button
                         type="button"
                         variant="ghost"
@@ -776,8 +776,14 @@ export function ContractCreationForm({ contract, onSuccess }: ContractCreationFo
                       <div className="bg-gray-700 border border-gray-600 rounded-lg p-4">
                         <p className="text-4xl md:text-3xl font-bold text-white">R$ {calculateTotal().toFixed(2)}</p>
                         <p className="text-sm md:text-xs text-gray-400 mt-1">
-                          Calculado com base nos equipamentos selecionados
+                          Valor mensal calculado com base nos equipamentos selecionados
                         </p>
+                        {formData.data_inicio && formData.data_fim && (
+                          <p className="text-sm md:text-xs text-orange-400 mt-2">
+                            Valor total do contrato: R$ {((calculateTotal() * calculateDays()) / 30).toFixed(2)} (
+                            {Math.ceil(calculateDays() / 30)} meses)
+                          </p>
+                        )}
                       </div>
                     )}
                   </div>

@@ -7,17 +7,27 @@ import { deleteMonthlyPayment } from "@/lib/actions/monthly-payments"
 import { useRouter } from "next/navigation"
 import { useState } from "react"
 import { toast } from "sonner"
+import { Button } from "@/components/ui/button"
+import { RefreshCw } from "lucide-react"
 
 interface MonthlyPaymentsSectionProps {
   payments: any[]
   onMarkAsPaid: (paymentId: string) => Promise<any>
+  onRecalculate?: () => Promise<{ success: boolean; error?: string; newValorTotal?: number }>
+  contractId?: string
 }
 
-export function MonthlyPaymentsSection({ payments, onMarkAsPaid }: MonthlyPaymentsSectionProps) {
+export function MonthlyPaymentsSection({
+  payments,
+  onMarkAsPaid,
+  onRecalculate,
+  contractId,
+}: MonthlyPaymentsSectionProps) {
   const router = useRouter()
   const [editingPayment, setEditingPayment] = useState<any | null>(null)
   const [deletingPayment, setDeletingPayment] = useState<any | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
+  const [isRecalculating, setIsRecalculating] = useState(false)
 
   const handleMarkAsPaid = async (paymentId: string) => {
     try {
@@ -86,12 +96,45 @@ export function MonthlyPaymentsSection({ payments, onMarkAsPaid }: MonthlyPaymen
     }
   }
 
+  const handleRecalculate = async () => {
+    if (!onRecalculate) return
+
+    setIsRecalculating(true)
+    try {
+      const result = await onRecalculate()
+      if (result.success) {
+        toast.success("Pagamentos recalculados com sucesso!")
+        router.refresh()
+      } else {
+        toast.error(result.error || "Erro ao recalcular pagamentos")
+      }
+    } catch (error) {
+      console.error("[v0] Error recalculating payments:", error)
+      toast.error("Erro ao recalcular pagamentos")
+    } finally {
+      setIsRecalculating(false)
+    }
+  }
+
   return (
     <>
       <div className="bg-slate-800 rounded-lg border border-slate-700 p-6">
-        <div className="flex items-center gap-2 mb-6">
-          <div className="h-1 w-12 bg-orange-500 rounded" />
-          <h2 className="text-lg font-semibold text-white">Pagamentos Mensais</h2>
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-2">
+            <div className="h-1 w-12 bg-orange-500 rounded" />
+            <h2 className="text-lg font-semibold text-white">Pagamentos Mensais</h2>
+          </div>
+          {onRecalculate && (
+            <Button
+              onClick={handleRecalculate}
+              disabled={isRecalculating}
+              size="sm"
+              className="bg-orange-600 hover:bg-orange-700 text-white"
+            >
+              <RefreshCw className={`mr-2 h-4 w-4 ${isRecalculating ? "animate-spin" : ""}`} />
+              {isRecalculating ? "Recalculando..." : "Recalcular Valores"}
+            </Button>
+          )}
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">

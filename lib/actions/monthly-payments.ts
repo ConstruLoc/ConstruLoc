@@ -28,8 +28,15 @@ export async function generateMonthlyPayments(
       currentDate.setMonth(currentDate.getMonth() + 1)
     }
 
-    // Calculate value per month
-    const valorMensal = valorTotal / monthCount
+    // Each month should have the same value as valorTotal
+    const valorMensal = valorTotal
+
+    console.log("[v0] Generating monthly payments:", {
+      contratoId,
+      monthCount,
+      valorMensal,
+      totalContractValue: valorMensal * monthCount,
+    })
 
     // Generate monthly payments
     currentDate.setTime(inicio.getTime())
@@ -62,6 +69,8 @@ export async function generateMonthlyPayments(
       console.error("[v0] Error generating monthly payments:", error)
       return { success: false, error: error.message }
     }
+
+    console.log("[v0] Monthly payments generated successfully:", months.length)
 
     await updateContractPaymentStatus(contratoId)
 
@@ -343,5 +352,83 @@ export async function deleteMonthlyPayment(paymentId: string) {
   } catch (error) {
     console.error("Error in deleteMonthlyPayment:", error)
     return { success: false, error: "Erro ao excluir pagamento mensal" }
+  }
+}
+
+export async function recalculateMonthlyPayments(contratoId: string) {
+  const supabase = await createClient()
+
+  try {
+    console.log("[v0] Recalculating monthly payments for contract:", contratoId)
+
+    // Get contract details
+    const { data: contract, error: contractError } = await supabase
+      .from("contratos")
+      .select("data_inicio, data_fim, valor_total")
+      .eq("id", contratoId)
+      .single()
+
+    if (contractError || !contract) {
+      console.error("[v0] Error fetching contract:", contractError)
+      return { success: false, error: "Contrato não encontrado" }
+    }
+
+    // Calculate number of months
+    const inicio = new Date(contract.data_inicio)
+    const fim = new Date(contract.data_fim)
+    const currentDate = new Date(inicio)
+    let monthCount = 0
+    while (currentDate <= fim) {
+      monthCount++
+      currentDate.setMonth(currentDate.getMonth() + 1)
+    }
+
+    // The current valor_total is actually the monthly value
+    const valorMensal = contract.valor_total
+    const newValorTotal = valorMensal * monthCount
+
+    console.log("[v0] Recalculation details:", {
+      contratoId,
+      oldValorTotal: contract.valor_total,
+      valorMensal,
+      monthCount,
+      newValorTotal,
+    })
+
+    // Update contract with new total value
+    const { error: updateError } = await supabase
+      .from("contratos")
+      .update({ valor_total: newValorTotal })
+      .eq("id", contratoId)
+
+    if (updateError) {
+      console.error("[v0] Error updating contract total:", updateError)
+      return { success: false, error: updateError.message }
+    }
+
+    // Regenerate monthly payments with correct values
+    const result = await generateMonthlyPayments(
+      contratoId,
+      contract.data_inicio,
+      contract.data_fim,
+      valorMensal, // Pass the monthly value, not the total
+    )
+
+    if (!result.success) {
+      return result
+    }
+
+    console.log("[v0] Monthly payments recalculated successfully")
+
+    revalidatePath("/contratos/[id]", "page")
+    revalidatePath("/pagamentos", "page")
+    revalidatePath("/relatorios", "page")
+    revalidatePath("/dashboard", "page")
+    revalidatePath("/contratos", "page")
+
+    return { success: true, newValorTotal }
+  } catch (error) {
+    console.error("[v0] Error in recalculateMonthlyPayments:", error)
+    return { success: false, error: "Erro ao recalcular pagamentos mensais" }
   }
 }
