@@ -48,6 +48,30 @@ export function MonthlyPaymentCard({
     }
   }
 
+  const handleEdit = () => {
+    console.log("[v0] Edit button clicked for payment:", id, mesReferencia)
+    if (onEdit) {
+      console.log("[v0] Calling onEdit function")
+      onEdit(id)
+    } else {
+      console.log("[v0] onEdit function not provided")
+    }
+  }
+
+  const handleDelete = () => {
+    console.log("[v0] Delete button clicked for payment:", id, mesReferencia)
+    if (onDelete) {
+      console.log("[v0] Calling onDelete function")
+      onDelete(id)
+    } else {
+      console.log("[v0] onDelete function not provided")
+    }
+  }
+
+  const handleDropdownTriggerClick = () => {
+    console.log("[v0] Dropdown trigger clicked for payment:", id, mesReferencia)
+  }
+
   const getStatusConfig = () => {
     switch (status) {
       case "pago":
@@ -92,17 +116,21 @@ export function MonthlyPaymentCard({
             </div>
             <div className="flex items-center gap-2">
               <Badge className={`${config.badgeClass} border`}>{config.badge}</Badge>
-              {/* Menu de três pontos */}
-              <DropdownMenu>
+              <DropdownMenu modal={true}>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0 hover:bg-gray-700">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 w-8 p-0 hover:bg-gray-700"
+                    onClick={handleDropdownTriggerClick}
+                  >
                     <MoreVertical className="h-4 w-4 text-gray-400" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="bg-gray-800 border-gray-700">
+                <DropdownMenuContent align="end" className="bg-gray-800 border-gray-700 z-50" sideOffset={5}>
                   {onEdit && (
                     <DropdownMenuItem
-                      onClick={() => onEdit(id)}
+                      onClick={handleEdit}
                       className="cursor-pointer hover:bg-gray-700 focus:bg-gray-700"
                     >
                       <Edit className="h-4 w-4 mr-2 text-blue-400" />
@@ -111,7 +139,7 @@ export function MonthlyPaymentCard({
                   )}
                   {onDelete && (
                     <DropdownMenuItem
-                      onClick={() => onDelete(id)}
+                      onClick={handleDelete}
                       className="cursor-pointer hover:bg-gray-700 focus:bg-gray-700"
                     >
                       <Trash2 className="h-4 w-4 mr-2 text-red-400" />
@@ -120,6 +148,7 @@ export function MonthlyPaymentCard({
                   )}
                 </DropdownMenuContent>
               </DropdownMenu>
+              {/* </CHANGE> */}
             </div>
           </div>
 

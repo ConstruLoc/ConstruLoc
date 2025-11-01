@@ -41,16 +41,26 @@ export function MonthlyPaymentsSection({ payments, onMarkAsPaid }: MonthlyPaymen
   }
 
   const handleEdit = (paymentId: string) => {
+    console.log("[v0] MonthlyPaymentsSection: handleEdit called with paymentId:", paymentId)
     const payment = payments.find((p) => p.id === paymentId)
+    console.log("[v0] MonthlyPaymentsSection: Found payment:", payment)
     if (payment) {
       setEditingPayment(payment)
+      console.log("[v0] MonthlyPaymentsSection: Set editingPayment to:", payment)
+    } else {
+      console.log("[v0] MonthlyPaymentsSection: Payment not found!")
     }
   }
 
   const handleDelete = (paymentId: string) => {
+    console.log("[v0] MonthlyPaymentsSection: handleDelete called with paymentId:", paymentId)
     const payment = payments.find((p) => p.id === paymentId)
+    console.log("[v0] MonthlyPaymentsSection: Found payment:", payment)
     if (payment) {
       setDeletingPayment(payment)
+      console.log("[v0] MonthlyPaymentsSection: Set deletingPayment to:", payment)
+    } else {
+      console.log("[v0] MonthlyPaymentsSection: Payment not found!")
     }
   }
 
@@ -126,21 +136,33 @@ export function MonthlyPaymentsSection({ payments, onMarkAsPaid }: MonthlyPaymen
 
       {/* Modal de edição */}
       {editingPayment && (
-        <EditMonthlyPaymentModal
-          payment={editingPayment}
-          open={!!editingPayment}
-          onOpenChange={(open) => !open && setEditingPayment(null)}
-        />
+        <>
+          {console.log("[v0] MonthlyPaymentsSection: Rendering EditMonthlyPaymentModal for:", editingPayment)}
+          <EditMonthlyPaymentModal
+            payment={editingPayment}
+            open={!!editingPayment}
+            onOpenChange={(open) => {
+              console.log("[v0] MonthlyPaymentsSection: EditModal onOpenChange called with:", open)
+              if (!open) setEditingPayment(null)
+            }}
+          />
+        </>
       )}
 
       {deletingPayment && (
-        <DeletePaymentModal
-          open={!!deletingPayment}
-          onOpenChange={(open) => !open && setDeletingPayment(null)}
-          onConfirm={confirmDelete}
-          paymentMonth={deletingPayment.mes_referencia}
-          isDeleting={isDeleting}
-        />
+        <>
+          {console.log("[v0] MonthlyPaymentsSection: Rendering DeletePaymentModal for:", deletingPayment)}
+          <DeletePaymentModal
+            open={!!deletingPayment}
+            onOpenChange={(open) => {
+              console.log("[v0] MonthlyPaymentsSection: DeleteModal onOpenChange called with:", open)
+              if (!open) setDeletingPayment(null)
+            }}
+            onConfirm={confirmDelete}
+            paymentMonth={deletingPayment.mes_referencia}
+            isDeleting={isDeleting}
+          />
+        </>
       )}
     </>
   )
