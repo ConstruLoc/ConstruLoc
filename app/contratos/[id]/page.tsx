@@ -13,6 +13,7 @@ import {
 } from "@/lib/actions/monthly-payments"
 import { ContractCreationForm } from "@/components/contracts/contract-creation-form"
 import { MonthlyPaymentsSection } from "@/components/contracts/monthly-payments-section"
+import { ContractPhotoViewer } from "@/components/contracts/contract-photo-viewer"
 
 function isValidUUID(str: string) {
   const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
@@ -93,6 +94,19 @@ export default async function ContractDetailsPage({ params }: { params: Promise<
   async function handleRecalculatePayments() {
     "use server"
     return await recalculateMonthlyPayments(id)
+  }
+
+  async function handleUpdatePhoto(photo: string | null) {
+    "use server"
+    const supabase = await createClient()
+    const { error } = await supabase.from("contratos").update({ foto_contrato: photo }).eq("id", id)
+
+    if (error) {
+      console.error("[v0] Erro ao atualizar foto:", error)
+      return { success: false, error: error.message }
+    }
+
+    return { success: true }
   }
 
   const getStatusColor = (status: string) => {
@@ -282,6 +296,12 @@ export default async function ContractDetailsPage({ params }: { params: Promise<
               </div>
             </div>
           </div>
+
+          <ContractPhotoViewer
+            contractId={id}
+            currentPhoto={contract.foto_contrato}
+            onPhotoUpdate={handleUpdatePhoto}
+          />
 
           {updatedMonthlyPayments && updatedMonthlyPayments.length > 0 && (
             <MonthlyPaymentsSection

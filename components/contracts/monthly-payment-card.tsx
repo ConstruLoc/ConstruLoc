@@ -5,9 +5,10 @@ import type React from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Check, Clock, AlertCircle, Edit, Trash2 } from "lucide-react"
+import { Check, Clock, AlertCircle, Edit, Trash2, FileText } from "lucide-react"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
+import { PaymentReceiptModal } from "./payment-receipt-modal"
 
 interface MonthlyPaymentCardProps {
   id: string
@@ -19,6 +20,12 @@ interface MonthlyPaymentCardProps {
   onMarkAsPaid: (id: string) => Promise<void>
   onEdit?: (id: string) => void
   onDelete?: (id: string) => void
+  contractNumber?: string
+  clientName?: string
+  clientCpf?: string
+  clientPhone?: string
+  contractStartDate?: string
+  contractEndDate?: string
 }
 
 export function MonthlyPaymentCard({
@@ -31,9 +38,16 @@ export function MonthlyPaymentCard({
   onMarkAsPaid,
   onEdit,
   onDelete,
+  contractNumber = "",
+  clientName = "",
+  clientCpf,
+  clientPhone,
+  contractStartDate = "",
+  contractEndDate = "",
 }: MonthlyPaymentCardProps) {
   const [loading, setLoading] = useState(false)
   const router = useRouter()
+  const [showReceipt, setShowReceipt] = useState(false)
 
   const handleMarkAsPaid = async (e: React.MouseEvent) => {
     e.preventDefault()
@@ -108,86 +122,113 @@ export function MonthlyPaymentCard({
   const IconComponent = config.icon
 
   return (
-    <Card className={`${config.cardClass} border-2 transition-all duration-200 hover:shadow-lg`}>
-      <CardContent className="p-4">
-        <div className="flex flex-col gap-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <IconComponent className={`h-5 w-5 ${config.iconClass}`} />
-              <span className="font-semibold text-white capitalize">{mesReferencia}</span>
-            </div>
-            <Badge className={`${config.badgeClass} border`}>{config.badge}</Badge>
-          </div>
-
-          {/* Value */}
-          <div className="text-2xl font-bold text-orange-400">
-            R$ {valor.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
-          </div>
-
-          {/* Dates */}
-          <div className="space-y-1 text-sm text-gray-400">
-            <div>
-              <span className="text-gray-500">Vencimento:</span>{" "}
-              {new Date(dataVencimento + "T00:00:00").toLocaleDateString("pt-BR")}
-            </div>
-            {dataPagamento && (
-              <div>
-                <span className="text-gray-500">Pago em:</span>{" "}
-                {new Date(dataPagamento + "T00:00:00").toLocaleDateString("pt-BR")}
+    <>
+      <Card className={`${config.cardClass} border-2 transition-all duration-200 hover:shadow-lg`}>
+        <CardContent className="p-4">
+          <div className="flex flex-col gap-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <IconComponent className={`h-5 w-5 ${config.iconClass}`} />
+                <span className="font-semibold text-white capitalize">{mesReferencia}</span>
               </div>
-            )}
-          </div>
+              <Badge className={`${config.badgeClass} border`}>{config.badge}</Badge>
+            </div>
 
-          <div className="flex flex-col gap-2">
-            {status !== "pago" && (
-              <Button
-                onClick={handleMarkAsPaid}
-                disabled={loading}
-                className="w-full bg-green-600 hover:bg-green-700 text-white"
-                size="sm"
-              >
-                {loading ? (
-                  <>
-                    <span className="animate-spin mr-2">⏳</span>
-                    Processando...
-                  </>
-                ) : (
-                  <>
-                    <Check className="h-4 w-4 mr-2" />
-                    Marcar como Pago
-                  </>
-                )}
-              </Button>
-            )}
+            {/* Value */}
+            <div className="text-2xl font-bold text-orange-400">
+              R$ {valor.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+            </div>
 
-            <div className="flex gap-2">
-              {onEdit && (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={handleEdit}
-                  className="bg-transparent border-gray-600 hover:bg-gray-700 flex-1"
-                >
-                  <Edit className="w-4 h-4 mr-2" />
-                  Editar
-                </Button>
-              )}
-
-              {onDelete && (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={handleDelete}
-                  className="bg-transparent border-red-600 hover:bg-red-700 text-red-400 hover:text-red-300 flex-1"
-                >
-                  <Trash2 className="w-4 h-4 mr-2" />
-                  Excluir
-                </Button>
+            {/* Dates */}
+            <div className="space-y-1 text-sm text-gray-400">
+              <div>
+                <span className="text-gray-500">Vencimento:</span>{" "}
+                {new Date(dataVencimento + "T00:00:00").toLocaleDateString("pt-BR")}
+              </div>
+              {dataPagamento && (
+                <div>
+                  <span className="text-gray-500">Pago em:</span>{" "}
+                  {new Date(dataPagamento + "T00:00:00").toLocaleDateString("pt-BR")}
+                </div>
               )}
             </div>
+
+            <div className="flex flex-col gap-2">
+              {status !== "pago" && (
+                <Button
+                  onClick={handleMarkAsPaid}
+                  disabled={loading}
+                  className="w-full bg-green-600 hover:bg-green-700 text-white"
+                  size="sm"
+                >
+                  {loading ? (
+                    <>
+                      <span className="animate-spin mr-2">⏳</span>
+                      Processando...
+                    </>
+                  ) : (
+                    <>
+                      <Check className="h-4 w-4 mr-2" />
+                      Marcar como Pago
+                    </>
+                  )}
+                </Button>
+              )}
+
+              {status === "pago" && (
+                <Button
+                  size="sm"
+                  onClick={() => setShowReceipt(true)}
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+                >
+                  <FileText className="w-4 h-4 mr-2" />
+                  Gerar Comprovante
+                </Button>
+              )}
+
+              <div className="flex gap-2">
+                {onEdit && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={handleEdit}
+                    className="bg-transparent border-gray-600 hover:bg-gray-700 flex-1"
+                  >
+                    <Edit className="w-4 h-4 mr-2" />
+                    Editar
+                  </Button>
+                )}
+
+                {onDelete && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={handleDelete}
+                    className="bg-transparent border-red-600 hover:bg-red-700 text-red-400 hover:text-red-300 flex-1"
+                  >
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    Excluir
+                  </Button>
+                )}
+              </div>
+            </div>
           </div>
-        </div>
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+
+      <PaymentReceiptModal
+        open={showReceipt}
+        onOpenChange={setShowReceipt}
+        contractNumber={contractNumber}
+        clientName={clientName}
+        clientCpf={clientCpf}
+        clientPhone={clientPhone}
+        paymentMonth={mesReferencia}
+        paymentValue={valor}
+        paymentDate={dataPagamento || new Date().toISOString()}
+        contractStartDate={contractStartDate}
+        contractEndDate={contractEndDate}
+      />
+    </>
   )
 }

@@ -3,28 +3,29 @@
 import type React from "react"
 import { useState, useEffect } from "react"
 import { createClient } from "@/lib/supabase/client"
-import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
+import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useRouter } from "next/navigation"
 import {
   Loader2,
-  Search,
-  Package,
-  X,
   CheckCircle2,
   AlertCircle,
   XCircle,
+  Plus,
+  Minus,
+  Search,
+  X,
+  Package,
   MapPin,
   Calendar,
   DollarSign,
-  Edit2,
+  Edit,
 } from "lucide-react"
-import { Badge } from "@/components/ui/badge"
-import Image from "next/image"
+import { ContractPhotoUpload } from "./contract-photo-upload"
 
 interface Equipment {
   id: string
@@ -68,9 +69,9 @@ export function ContractCreationForm({ contract, onSuccess }: ContractCreationFo
     cliente_id: contract?.cliente_id || "",
     data_inicio: contract?.data_inicio || "",
     data_fim: contract?.data_fim || "",
-    data_vencimento_pagamento: contract?.data_inicio || "",
+    data_vencimento_pagamento: contract?.data_vencimento_pagamento || "",
     status: contract?.status || "pendente",
-    status_pagamento: "pendente",
+    status_pagamento: contract?.status_pagamento || "pendente",
     observacoes: contract?.observacoes || "",
     endereco_instalacao: contract?.endereco_instalacao || "",
     valor_total_manual: contract?.valor_total || 0,
@@ -85,6 +86,7 @@ export function ContractCreationForm({ contract, onSuccess }: ContractCreationFo
   const [error, setError] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState("")
   const [isLoadingData, setIsLoadingData] = useState(true)
+  const [contractPhoto, setContractPhoto] = useState<File | null>(null)
 
   const router = useRouter()
   const supabase = createClient()
@@ -418,6 +420,7 @@ export function ContractCreationForm({ contract, onSuccess }: ContractCreationFo
         observacoes: formData.observacoes,
         endereco_instalacao: formData.endereco_instalacao,
         valor_total: valorTotal,
+        foto_contrato: contractPhoto,
       }
 
       let contractId: string
@@ -590,6 +593,7 @@ export function ContractCreationForm({ contract, onSuccess }: ContractCreationFo
                 </h2>
 
                 <div className="space-y-5 md:space-y-4">
+                  {/* Cliente */}
                   <div className="space-y-2">
                     <Label htmlFor="cliente" className="text-gray-300 text-base md:text-sm">
                       Cliente
@@ -598,25 +602,26 @@ export function ContractCreationForm({ contract, onSuccess }: ContractCreationFo
                       value={formData.cliente_id}
                       onValueChange={(value) => handleInputChange("cliente_id", value)}
                     >
-                      <SelectTrigger className="bg-gray-700 border-gray-600 text-white h-12 md:h-11 text-base">
+                      <SelectTrigger className="bg-gray-700 border-gray-600 text-white text-base">
                         <SelectValue placeholder="Selecione um cliente" />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="bg-gray-700 border-gray-600">
                         {clients.map((client) => (
-                          <SelectItem key={client.id} value={client.id} className="text-base">
-                            {client.nome}
+                          <SelectItem key={client.id} value={client.id} className="text-white hover:bg-gray-600">
+                            {client.nome} {client.empresa ? `- ${client.empresa}` : ""}
                           </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
                   </div>
 
+                  {/* Endereço de Instalação */}
                   <div className="space-y-2">
                     <Label
                       htmlFor="endereco_instalacao"
                       className="text-gray-300 text-base md:text-sm flex items-center gap-2"
                     >
-                      <MapPin className="h-5 w-5 md:h-4 md:w-4 text-orange-500" />
+                      <MapPin className="h-4 w-4 text-orange-500" />
                       Endereço de Instalação
                     </Label>
                     <Textarea
@@ -625,37 +630,31 @@ export function ContractCreationForm({ contract, onSuccess }: ContractCreationFo
                       onChange={(e) => handleInputChange("endereco_instalacao", e.target.value)}
                       placeholder="Digite o endereço onde o equipamento será instalado..."
                       rows={3}
-                      className="bg-gray-700 border-gray-600 text-white placeholder:text-gray-500 resize-none text-base"
+                      className="bg-gray-700 border-gray-600 text-white resize-none text-base"
                     />
-                    <p className="text-sm md:text-xs text-gray-500">Local onde o equipamento será utilizado</p>
+                    <p className="text-gray-400 text-xs">Local onde o equipamento será utilizado</p>
                   </div>
 
+                  {/* Data de Início */}
                   <div className="space-y-2">
                     <Label htmlFor="data_inicio" className="text-gray-300 text-base md:text-sm flex items-center gap-2">
-                      <Calendar className="h-5 w-5 md:h-4 md:w-4 text-orange-500" />
+                      <Calendar className="h-4 w-4 text-orange-500" />
                       Data de Início
                     </Label>
                     <Input
                       id="data_inicio"
                       type="date"
                       value={formData.data_inicio}
-                      onChange={(e) => {
-                        handleInputChange("data_inicio", e.target.value)
-                        if (
-                          !formData.data_vencimento_pagamento ||
-                          formData.data_vencimento_pagamento === formData.data_inicio
-                        ) {
-                          handleInputChange("data_vencimento_pagamento", e.target.value)
-                        }
-                      }}
-                      className="bg-gray-700 border-gray-600 text-white h-12 md:h-11 text-base"
+                      onChange={(e) => handleInputChange("data_inicio", e.target.value)}
+                      className="bg-gray-700 border-gray-600 text-white text-base"
                       required
                     />
                   </div>
 
+                  {/* Data de Fim */}
                   <div className="space-y-2">
                     <Label htmlFor="data_fim" className="text-gray-300 text-base md:text-sm flex items-center gap-2">
-                      <Calendar className="h-5 w-5 md:h-4 md:w-4 text-orange-500" />
+                      <Calendar className="h-4 w-4 text-orange-500" />
                       Data de Fim
                     </Label>
                     <Input
@@ -663,17 +662,18 @@ export function ContractCreationForm({ contract, onSuccess }: ContractCreationFo
                       type="date"
                       value={formData.data_fim}
                       onChange={(e) => handleInputChange("data_fim", e.target.value)}
-                      className="bg-gray-700 border-gray-600 text-white h-12 md:h-11 text-base"
+                      className="bg-gray-700 border-gray-600 text-white text-base"
                       required
                     />
                   </div>
 
+                  {/* Data de Vencimento do Pagamento */}
                   <div className="space-y-2">
                     <Label
                       htmlFor="data_vencimento_pagamento"
                       className="text-gray-300 text-base md:text-sm flex items-center gap-2"
                     >
-                      <DollarSign className="h-5 w-5 md:h-4 md:w-4 text-orange-500" />
+                      <DollarSign className="h-4 w-4 text-orange-500" />
                       Data de Vencimento do Pagamento
                     </Label>
                     <Input
@@ -681,30 +681,32 @@ export function ContractCreationForm({ contract, onSuccess }: ContractCreationFo
                       type="date"
                       value={formData.data_vencimento_pagamento}
                       onChange={(e) => handleInputChange("data_vencimento_pagamento", e.target.value)}
-                      className="bg-gray-700 border-gray-600 text-white h-12 md:h-11 text-base"
-                      required
+                      className="bg-gray-700 border-gray-600 text-white text-base"
                     />
-                    <p className="text-sm md:text-xs text-gray-500">Notificação será enviada 5 dias antes desta data</p>
+                    <p className="text-gray-400 text-xs">Notificação será enviada 5 dias antes desta data</p>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {/* Status do Contrato e Status de Pagamento - lado a lado */}
+                  <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label className="text-gray-300 text-base md:text-sm">Status do Contrato</Label>
+                      <Label htmlFor="status" className="text-gray-300 text-base md:text-sm">
+                        Status do Contrato
+                      </Label>
                       <Select value={formData.status} onValueChange={(value) => handleInputChange("status", value)}>
-                        <SelectTrigger className="bg-gray-700 border-gray-600 text-white h-12 md:h-11 text-base">
-                          <SelectValue placeholder="Selecione" />
+                        <SelectTrigger className="bg-gray-700 border-gray-600 text-white text-base">
+                          <SelectValue placeholder="Pendente" />
                         </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="pendente" className="text-base">
+                        <SelectContent className="bg-gray-700 border-gray-600">
+                          <SelectItem value="pendente" className="text-white hover:bg-gray-600">
                             Pendente
                           </SelectItem>
-                          <SelectItem value="ativo" className="text-base">
+                          <SelectItem value="ativo" className="text-white hover:bg-gray-600">
                             Ativo
                           </SelectItem>
-                          <SelectItem value="finalizado" className="text-base">
-                            Finalizado
+                          <SelectItem value="concluido" className="text-white hover:bg-gray-600">
+                            Concluído
                           </SelectItem>
-                          <SelectItem value="cancelado" className="text-base">
+                          <SelectItem value="cancelado" className="text-white hover:bg-gray-600">
                             Cancelado
                           </SelectItem>
                         </SelectContent>
@@ -712,26 +714,32 @@ export function ContractCreationForm({ contract, onSuccess }: ContractCreationFo
                     </div>
 
                     <div className="space-y-2">
-                      <Label className="text-gray-300 text-base md:text-sm">Status de Pagamento</Label>
+                      <Label htmlFor="status_pagamento" className="text-gray-300 text-base md:text-sm">
+                        Status de Pagamento
+                      </Label>
                       <Select
                         value={formData.status_pagamento}
                         onValueChange={(value) => handleInputChange("status_pagamento", value)}
                       >
-                        <SelectTrigger className="bg-gray-700 border-gray-600 text-white h-12 md:h-11 text-base">
-                          <SelectValue placeholder="Selecione" />
+                        <SelectTrigger className="bg-gray-700 border-gray-600 text-white text-base">
+                          <SelectValue placeholder="Pendente" />
                         </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="pendente" className="text-base">
+                        <SelectContent className="bg-gray-700 border-gray-600">
+                          <SelectItem value="pendente" className="text-white hover:bg-gray-600">
                             Pendente
                           </SelectItem>
-                          <SelectItem value="pago" className="text-base">
+                          <SelectItem value="pago" className="text-white hover:bg-gray-600">
                             Pago
+                          </SelectItem>
+                          <SelectItem value="atrasado" className="text-white hover:bg-gray-600">
+                            Atrasado
                           </SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
                   </div>
 
+                  {/* Valor Mensal (R$) */}
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
                       <Label className="text-gray-300 text-base md:text-sm">Valor Mensal (R$)</Label>
@@ -739,55 +747,36 @@ export function ContractCreationForm({ contract, onSuccess }: ContractCreationFo
                         type="button"
                         variant="ghost"
                         size="sm"
-                        onClick={() => {
-                          const novoValor = !formData.usar_valor_manual
-                          if (novoValor) {
-                            const calculatedTotal = items.reduce((total, item) => total + (item.valor_total || 0), 0)
-                            handleInputChange("valor_total_manual", calculatedTotal)
-                          }
-                          handleInputChange("usar_valor_manual", novoValor)
-                        }}
-                        className="text-orange-500 hover:text-orange-400 hover:bg-gray-700 h-8 text-xs"
+                        onClick={() => handleInputChange("usar_valor_manual", !formData.usar_valor_manual)}
+                        className="text-orange-500 hover:text-orange-400 hover:bg-transparent p-0 h-auto"
                       >
-                        <Edit2 className="h-3 w-3 mr-1" />
-                        {formData.usar_valor_manual ? "Automático" : "Editar"}
+                        <Edit className="h-4 w-4 mr-1" />
+                        Editar
                       </Button>
                     </div>
 
                     {formData.usar_valor_manual ? (
-                      <div className="space-y-2">
-                        <Input
-                          type="number"
-                          step="0.01"
-                          min="0"
-                          value={formData.valor_total_manual}
-                          onChange={(e) =>
-                            handleInputChange("valor_total_manual", Number.parseFloat(e.target.value) || 0)
-                          }
-                          className="bg-gray-700 border-gray-600 text-white h-12 md:h-11 text-base"
-                          placeholder="0.00"
-                        />
-                        <p className="text-sm md:text-xs text-orange-400">
-                          Modo manual ativado. Valor calculado: R${" "}
-                          {items.reduce((total, item) => total + (item.valor_total || 0), 0).toFixed(2)}
-                        </p>
-                      </div>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        value={formData.valor_total_manual}
+                        onChange={(e) =>
+                          handleInputChange("valor_total_manual", Number.parseFloat(e.target.value) || 0)
+                        }
+                        className="bg-gray-700 border-gray-600 text-white text-3xl font-bold h-20 text-center"
+                        placeholder="0.00"
+                      />
                     ) : (
-                      <div className="bg-gray-700 border border-gray-600 rounded-lg p-4">
-                        <p className="text-4xl md:text-3xl font-bold text-white">R$ {calculateTotal().toFixed(2)}</p>
-                        <p className="text-sm md:text-xs text-gray-400 mt-1">
-                          Valor mensal calculado com base nos equipamentos selecionados
-                        </p>
-                        {formData.data_inicio && formData.data_fim && (
-                          <p className="text-sm md:text-xs text-orange-400 mt-2">
-                            Valor total do contrato: R$ {((calculateTotal() * calculateDays()) / 30).toFixed(2)} (
-                            {Math.ceil(calculateDays() / 30)} meses)
-                          </p>
-                        )}
+                      <div className="bg-gray-700 p-6 rounded-lg">
+                        <p className="text-white text-4xl font-bold text-center">R$ {calculateTotal().toFixed(2)}</p>
                       </div>
                     )}
+                    <p className="text-gray-400 text-xs">
+                      Valor mensal calculado com base nos equipamentos selecionados
+                    </p>
                   </div>
 
+                  {/* Observações */}
                   <div className="space-y-2">
                     <Label htmlFor="observacoes" className="text-gray-300 text-base md:text-sm">
                       Observações
@@ -802,147 +791,115 @@ export function ContractCreationForm({ contract, onSuccess }: ContractCreationFo
                     />
                   </div>
 
+                  {/* Upload de Foto do Contrato */}
+                  <ContractPhotoUpload
+                    currentPhoto={contractPhoto}
+                    onPhotoChange={setContractPhoto}
+                    disabled={isLoading}
+                  />
+
+                  {error && (
+                    <div className="bg-red-500/10 border border-red-500 text-red-500 p-3 rounded-lg text-sm">
+                      {error}
+                    </div>
+                  )}
+
                   <div className="flex flex-col sm:flex-row gap-3 pt-4">
                     <Button
                       type="submit"
-                      disabled={isLoading || items.length === 0}
-                      className="flex-1 bg-orange-500 hover:bg-orange-600 text-white h-12 md:h-11 text-base font-medium"
+                      disabled={isLoading}
+                      className="flex-1 bg-orange-600 hover:bg-orange-700 text-white text-base h-11"
                     >
-                      {isLoading && <Loader2 className="mr-2 h-5 w-5 md:h-4 md:w-4 animate-spin" />}
-                      Salvar Contrato
+                      {isLoading ? (
+                        <>
+                          <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                          Salvando...
+                        </>
+                      ) : (
+                        <>Salvar Contrato</>
+                      )}
                     </Button>
                     <Button
                       type="button"
                       variant="outline"
                       onClick={() => router.push("/contratos")}
                       disabled={isLoading}
-                      className="bg-gray-700 border-gray-600 text-white hover:bg-gray-600 h-12 md:h-11 text-base font-medium"
+                      className="flex-1 bg-transparent border-gray-600 text-white hover:bg-gray-700 text-base h-11"
                     >
                       Cancelar
                     </Button>
                   </div>
-
-                  {error && (
-                    <div className="bg-red-900/30 border border-red-700 rounded-lg p-4">
-                      <p className="text-base md:text-sm text-red-400">{error}</p>
-                    </div>
-                  )}
                 </div>
               </CardContent>
             </Card>
           </div>
 
           {/* Right Column - Equipment Selection */}
-          <div className="space-y-6">
+          <div className="space-y-4 md:space-y-6">
             <Card className="bg-gray-800 border-gray-700">
-              <CardContent className="p-6">
-                <h2 className="text-orange-500 text-lg font-semibold mb-4">Equipamentos Selecionados</h2>
+              <CardContent className="p-4 md:p-6">
+                <h2 className="text-orange-500 text-xl md:text-lg font-semibold mb-4 md:mb-6">
+                  Equipamentos Selecionados
+                </h2>
+
                 {items.length === 0 ? (
-                  <p className="text-gray-400 text-center py-8">Nenhum equipamento selecionado</p>
+                  <div className="text-center py-8 text-gray-400">
+                    <p className="text-base">Nenhum equipamento selecionado</p>
+                    <p className="text-sm mt-2">Adicione equipamentos da lista ao lado</p>
+                  </div>
                 ) : (
                   <div className="space-y-3">
-                    {items.map((item) => {
-                      const availability = getAvailabilityStatus(item.equipamento?.stock_count)
-                      const StatusIcon = availability.icon
-
-                      return (
-                        <div
-                          key={item.equipamento_id}
-                          className="flex items-center gap-3 bg-gray-700 rounded-lg p-3 border border-gray-600"
-                        >
-                          <div className="w-12 h-12 bg-gray-600 rounded-lg overflow-hidden flex-shrink-0">
-                            {item.equipamento?.imagem_url ? (
-                              <Image
-                                src={item.equipamento.imagem_url || "/placeholder.svg"}
-                                alt={item.equipamento.nome}
-                                width={48}
-                                height={48}
-                                className="w-full h-full object-cover"
-                              />
-                            ) : (
-                              <div className="w-full h-full flex items-center justify-center">
-                                <Package className="h-5 w-5 text-gray-400" />
-                              </div>
-                            )}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-white font-medium text-sm truncate">{item.equipamento?.nome}</p>
-                            <p className="text-gray-400 text-xs">R$ {item.valor_unitario.toFixed(2)}/mês</p>{" "}
-                            {/* Display monthly price */}
-                            <div className="flex items-center gap-2 mt-1">
-                              <Badge
-                                variant="secondary"
-                                className={`${availability.color} text-white text-xs px-2 py-0 h-5`}
-                              >
-                                <StatusIcon className="h-3 w-3 mr-1" />
-                                {availability.status}
-                              </Badge>
-                              <span className="text-xs text-gray-400">
-                                {item.equipamento?.stock_count || 0} em estoque
-                              </span>
-                            </div>
-                            {/* Quantity Selector */}
-                            <div className="flex items-center gap-2 mt-2">
-                              <Label className="text-xs text-gray-400">Qtd:</Label>
-                              <div className="flex items-center gap-1">
-                                <Button
-                                  type="button"
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={(e) => {
-                                    e.preventDefault()
-                                    e.stopPropagation()
-                                    updateItemQuantity(item.equipamento_id, item.quantidade - 1)
-                                  }}
-                                  disabled={item.quantidade <= 1}
-                                  className="h-6 w-6 p-0 bg-gray-600 border-gray-500 hover:bg-gray-500 text-white disabled:opacity-50 disabled:cursor-not-allowed"
-                                >
-                                  -
-                                </Button>
-                                <Input
-                                  type="number"
-                                  min="1"
-                                  max={item.equipamento?.stock_count || 1}
-                                  value={item.quantidade || 1}
-                                  onChange={(e) => {
-                                    const val = e.target.value
-                                    const num = val === "" ? 1 : Number.parseInt(val)
-                                    updateItemQuantity(item.equipamento_id, num)
-                                  }}
-                                  onClick={(e) => e.stopPropagation()}
-                                  className="h-6 w-12 text-center bg-gray-600 border-gray-500 text-white text-xs p-0"
-                                />
-                                <Button
-                                  type="button"
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={(e) => {
-                                    e.preventDefault()
-                                    e.stopPropagation()
-                                    updateItemQuantity(item.equipamento_id, item.quantidade + 1)
-                                  }}
-                                  disabled={item.quantidade >= (item.equipamento?.stock_count || 1)}
-                                  className="h-6 w-6 p-0 bg-gray-600 border-gray-500 hover:bg-gray-500 text-white disabled:opacity-50 disabled:cursor-not-allowed"
-                                >
-                                  +
-                                </Button>
-                              </div>
-                              <span className="text-xs text-gray-400">= R$ {item.valor_total.toFixed(2)}</span>{" "}
-                              {/* Display total for this item */}
-                            </div>
+                    {items.map((item) => (
+                      <div key={item.equipamento_id} className="bg-gray-700 p-4 rounded-lg">
+                        <div className="flex justify-between items-start mb-3">
+                          <div className="flex-1">
+                            <h3 className="text-white font-medium text-base">{item.equipamento?.nome}</h3>
+                            <p className="text-gray-400 text-sm">
+                              {item.equipamento?.marca} - {item.equipamento?.modelo}
+                            </p>
                           </div>
                           <Button
                             type="button"
                             variant="ghost"
                             size="sm"
                             onClick={() => removeItem(item.equipamento_id)}
-                            className="text-red-400 hover:text-red-300 hover:bg-gray-600 h-8 w-8 p-0"
+                            className="text-red-500 hover:text-red-400 hover:bg-red-500/10"
                           >
                             <X className="h-4 w-4" />
                           </Button>
                         </div>
-                      )
-                    })}
+
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => updateItemQuantity(item.equipamento_id, item.quantidade - 1)}
+                              disabled={item.quantidade <= 1}
+                              className="h-8 w-8 p-0 bg-gray-600 border-gray-500"
+                            >
+                              <Minus className="h-4 w-4" />
+                            </Button>
+                            <span className="text-white font-medium w-12 text-center">{item.quantidade}</span>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => updateItemQuantity(item.equipamento_id, item.quantidade + 1)}
+                              disabled={item.quantidade >= (item.equipamento?.stock_count || 1)}
+                              className="h-8 w-8 p-0 bg-gray-600 border-gray-500"
+                            >
+                              <Plus className="h-4 w-4" />
+                            </Button>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-gray-400 text-xs">Valor Total</p>
+                            <p className="text-orange-500 font-bold text-lg">R$ {item.valor_total.toFixed(2)}</p>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 )}
               </CardContent>
@@ -950,108 +907,93 @@ export function ContractCreationForm({ contract, onSuccess }: ContractCreationFo
 
             <Card className="bg-gray-800 border-gray-700">
               <CardContent className="p-4 md:p-6">
-                <h2 className="text-orange-500 text-lg md:text-xl font-semibold mb-4">Equipamentos Disponíveis</h2>
+                <h2 className="text-orange-500 text-xl md:text-lg font-semibold mb-4 md:mb-6">
+                  Equipamentos Disponíveis
+                </h2>
 
-                {/* Search Bar */}
                 <div className="mb-4">
                   <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 md:h-4 md:w-4 text-gray-400" />
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
                     <Input
+                      type="text"
                       placeholder="Buscar equipamentos..."
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
-                      className="pl-10 bg-gray-700 border-gray-600 text-white h-12 md:h-11 text-base"
+                      className="pl-10 bg-gray-700 border-gray-600 text-white text-base"
                     />
                   </div>
                 </div>
 
-                <div className="space-y-4 max-h-[600px] overflow-y-auto pr-2">
-                  {filteredEquipments.length > 0 ? (
+                <div className="space-y-3 max-h-[600px] overflow-y-auto">
+                  {filteredEquipments.length === 0 ? (
+                    <div className="text-center py-8 text-gray-400">
+                      <p className="text-base">Nenhum equipamento encontrado</p>
+                    </div>
+                  ) : (
                     filteredEquipments.map((equipment) => {
-                      const addedItem = items.find((item) => item.equipamento_id === equipment.id)
-                      const addedQuantity = addedItem ? addedItem.quantidade : 0
-                      const remainingStock = Math.max(0, (equipment.stock_count || 0) - addedQuantity)
-                      const isFullyAdded = remainingStock <= 0
-
                       const availability = getAvailabilityStatus(equipment.stock_count)
                       const StatusIcon = availability.icon
+                      const isAdded = items.some((item) => item.equipamento_id === equipment.id)
 
                       return (
                         <div
                           key={equipment.id}
-                          className={`rounded-lg p-4 border-2 transition-all ${
-                            addedItem
-                              ? "bg-orange-900/20 border-orange-500"
-                              : "bg-gray-700 border-gray-600 hover:border-orange-500"
+                          className={`bg-gray-700 p-4 rounded-lg cursor-pointer transition-all ${
+                            isAdded ? "ring-2 ring-orange-500" : "hover:bg-gray-600"
                           }`}
+                          onClick={() => !isAdded && addEquipmentToContract(equipment)}
                         >
-                          <div className="flex items-start gap-3 mb-3">
-                            <div className="w-16 h-16 md:w-14 md:h-14 bg-gray-600 rounded-lg overflow-hidden flex-shrink-0">
+                          <div className="flex gap-3 mb-2">
+                            <div className="flex-shrink-0">
                               {equipment.imagem_url ? (
-                                <Image
+                                <img
                                   src={equipment.imagem_url || "/placeholder.svg"}
                                   alt={equipment.nome}
-                                  width={64}
-                                  height={64}
-                                  className="w-full h-full object-cover"
+                                  className="w-16 h-16 object-cover rounded-lg bg-gray-600"
                                 />
                               ) : (
-                                <div className="w-full h-full flex items-center justify-center">
-                                  <Package className="h-7 w-7 md:h-6 md:w-6 text-gray-400" />
+                                <div className="w-16 h-16 bg-orange-500/20 rounded-lg flex items-center justify-center">
+                                  <Package className="w-8 h-8 text-orange-500" />
                                 </div>
                               )}
                             </div>
                             <div className="flex-1 min-w-0">
-                              <p className="text-white font-semibold text-base md:text-sm leading-tight mb-1">
-                                {equipment.nome}
-                              </p>
-                              <p className="text-gray-400 text-sm md:text-xs mb-2">{equipment.marca}</p>
-                              <p className="text-orange-400 font-bold text-base md:text-sm">
-                                {formatEquipmentPrice(equipment)}
-                              </p>
+                              <div className="flex justify-between items-start mb-1">
+                                <div className="flex-1 min-w-0">
+                                  <h3 className="text-white font-medium text-base truncate">{equipment.nome}</h3>
+                                  <p className="text-gray-400 text-sm truncate">{equipment.marca}</p>
+                                </div>
+                                <div
+                                  className={`flex items-center gap-1 px-2 py-1 rounded text-xs ${availability.color} ml-2 flex-shrink-0`}
+                                >
+                                  <StatusIcon className="h-3 w-3" />
+                                  <span>{equipment.stock_count || 0} disponível</span>
+                                </div>
+                              </div>
+                              <div className="flex justify-between items-center mt-2">
+                                <span className="text-orange-500 font-semibold text-base">
+                                  {formatEquipmentPrice(equipment)}
+                                </span>
+                                {!isAdded && (
+                                  <Button
+                                    type="button"
+                                    size="sm"
+                                    className="bg-orange-600 hover:bg-orange-700 text-white h-8"
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      addEquipmentToContract(equipment)
+                                    }}
+                                  >
+                                    Adicionar
+                                  </Button>
+                                )}
+                                {isAdded && <span className="text-orange-500 text-sm font-medium">Adicionado</span>}
+                              </div>
                             </div>
                           </div>
-
-                          <div className="flex flex-wrap items-center gap-2 mb-3">
-                            <Badge
-                              variant="secondary"
-                              className={`${availability.color} text-white text-sm md:text-xs px-3 py-1 md:px-2 md:py-0 h-7 md:h-5`}
-                            >
-                              <StatusIcon className="h-4 w-4 md:h-3 md:w-3 mr-1" />
-                              {availability.status}
-                            </Badge>
-                            <span className="text-sm md:text-xs text-gray-300 font-medium">
-                              {remainingStock} disponível
-                            </span>
-                            {addedQuantity > 0 && (
-                              <span className="text-sm md:text-xs text-orange-400 font-medium">
-                                • {addedQuantity} selecionado
-                              </span>
-                            )}
-                          </div>
-
-                          <Button
-                            type="button"
-                            onClick={() => addEquipmentToContract(equipment)}
-                            disabled={isFullyAdded}
-                            className={`w-full h-12 md:h-10 text-base md:text-sm font-semibold ${
-                              isFullyAdded
-                                ? "bg-gray-600 text-gray-400 cursor-not-allowed"
-                                : addedItem
-                                  ? "bg-orange-600 hover:bg-orange-700 text-white"
-                                  : "bg-orange-500 hover:bg-orange-600 text-white"
-                            }`}
-                          >
-                            {isFullyAdded ? "Esgotado" : addedItem ? "Adicionar Mais" : "Adicionar"}
-                          </Button>
                         </div>
                       )
                     })
-                  ) : (
-                    <div className="text-center py-12 text-gray-400">
-                      <Package className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                      <p className="text-base">Nenhum equipamento encontrado</p>
-                    </div>
                   )}
                 </div>
               </CardContent>
