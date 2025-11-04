@@ -14,6 +14,27 @@ export async function generateMonthlyPayments(
   try {
     await supabase.from("pagamentos_mensais").delete().eq("contrato_id", contratoId)
 
+    let diaVencimento = 5 // Valor padrão
+
+    try {
+      const { data: contrato, error: contratoError } = await supabase
+        .from("contratos")
+        .select("dia_vencimento")
+        .eq("id", contratoId)
+        .single()
+
+      if (!contratoError && contrato?.dia_vencimento) {
+        diaVencimento = contrato.dia_vencimento
+        console.log("[v0] Using dia_vencimento from contract:", diaVencimento)
+      } else {
+        console.log("[v0] dia_vencimento not found, using default:", diaVencimento)
+      }
+    } catch (error) {
+      console.log("[v0] Could not fetch dia_vencimento (column may not exist), using default:", diaVencimento)
+    }
+
+    console.log("[v0] Using due day:", diaVencimento)
+
     // Calculate months between start and end dates
     const inicio = new Date(dataInicio)
     const fim = new Date(dataFim)
@@ -35,6 +56,7 @@ export async function generateMonthlyPayments(
       contratoId,
       monthCount,
       valorMensal,
+      diaVencimento,
       totalContractValue: valorMensal * monthCount,
     })
 
@@ -46,8 +68,18 @@ export async function generateMonthlyPayments(
       const mesNome = currentDate.toLocaleDateString("pt-BR", { month: "short" })
       const mesReferencia = `${mesNome}/${ano}`
 
-      // Set due date to the same day of the month as start date
-      const dataVencimento = new Date(currentDate)
+      const dataVencimento = new Date(ano, currentDate.getMonth(), diaVencimento)
+
+      // Se o dia não existe no mês (ex: 31 em fevereiro), usar o último dia do mês
+      if (dataVencimento.getMonth() !== currentDate.getMonth()) {
+        dataVencimento.setDate(0) // Volta para o último dia do mês anterior
+      }
+
+      console.log("[v0] Creating payment for:", {
+        mesReferencia,
+        diaVencimento,
+        dataVencimento: dataVencimento.toISOString().split("T")[0],
+      })
 
       months.push({
         contrato_id: contratoId,
@@ -85,6 +117,20 @@ async function updateContractPaymentStatus(contratoId: string) {
   const supabase = await createClient()
 
   try {
+    // Get the first monthly payment to use its due date
+    const { data: firstPayment } = await supabase
+      .from("pagamentos_mensais")
+      .select("data_vencimento")
+      .eq("contrato_id", contratoId)
+      .order("data_vencimento", { ascending: true })
+      .limit(1)
+      .single()
+
+    // Use the first payment's due date, or fallback to today
+    const dataVencimento = firstPayment?.data_vencimento || new Date().toISOString().split("T")[0]
+
+    console.log("[v0] Using data_vencimento for pagamentos table:", dataVencimento)
+
     // Get all monthly payments for this contract
     const { data: monthlyPayments, error: fetchError } = await supabase
       .from("pagamentos_mensais")
@@ -98,13 +144,10 @@ async function updateContractPaymentStatus(contratoId: string) {
 
     // Calculate overall status
     const allPaid = monthlyPayments.every((p) => p.status === "pago")
-    const anyPaid = monthlyPayments.some((p) => p.status === "pago")
 
     let overallStatus = "pendente"
     if (allPaid) {
       overallStatus = "pago"
-    } else if (anyPaid && !allPaid) {
-      overallStatus = "parcial"
     }
 
     // Get contract details
@@ -136,7 +179,7 @@ async function updateContractPaymentStatus(contratoId: string) {
       cliente_nome: (contrato as any).clientes?.nome || "",
       cliente_empresa: (contrato as any).clientes?.empresa || "",
       valor: (contrato as any).valor_total || 0,
-      data_vencimento: new Date().toISOString().split("T")[0],
+      data_vencimento: dataVencimento, // Use the first payment's due date
       data_pagamento: allPaid ? new Date().toISOString().split("T")[0] : null,
       status: overallStatus,
       equipamentos_info: equipamentosInfo,
@@ -144,17 +187,26 @@ async function updateContractPaymentStatus(contratoId: string) {
       updated_at: new Date().toISOString(),
     }
 
+    console.log("[v0] Payment data to insert/update:", {
+      ...paymentData,
+      equipamentos_info: `${equipamentosInfo.length} items`,
+    })
+
     if (existingPayment) {
       const { error: updateError } = await supabase.from("pagamentos").update(paymentData).eq("id", existingPayment.id)
 
       if (updateError) {
         console.error("[v0] Error updating payment record:", updateError.message)
+      } else {
+        console.log("[v0] Payment record updated successfully")
       }
     } else {
       const { error: insertError } = await supabase.from("pagamentos").insert(paymentData)
 
       if (insertError) {
         console.error("[v0] Error inserting payment record:", insertError.message)
+      } else {
+        console.log("[v0] Payment record inserted successfully")
       }
     }
   } catch (error) {

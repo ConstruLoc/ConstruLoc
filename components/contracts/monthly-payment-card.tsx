@@ -6,9 +6,10 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Check, Clock, AlertCircle, Edit, Trash2, FileText } from "lucide-react"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { PaymentReceiptModal } from "./payment-receipt-modal"
+import { createClient } from "@/lib/supabase/client"
 
 interface MonthlyPaymentCardProps {
   id: string
@@ -26,6 +27,7 @@ interface MonthlyPaymentCardProps {
   clientPhone?: string
   contractStartDate?: string
   contractEndDate?: string
+  contractId?: string
 }
 
 export function MonthlyPaymentCard({
@@ -44,10 +46,50 @@ export function MonthlyPaymentCard({
   clientPhone,
   contractStartDate = "",
   contractEndDate = "",
+  contractId,
 }: MonthlyPaymentCardProps) {
   const [loading, setLoading] = useState(false)
   const router = useRouter()
   const [showReceipt, setShowReceipt] = useState(false)
+  const [equipments, setEquipments] = useState<Array<{ nome: string; quantidade: number; valor_unitario: number }>>([])
+
+  useEffect(() => {
+    if (showReceipt && contractId) {
+      fetchEquipments()
+    }
+  }, [showReceipt, contractId])
+
+  const fetchEquipments = async () => {
+    if (!contractId) return
+
+    try {
+      const supabase = createClient()
+      const { data, error } = await supabase
+        .from("itens_contrato")
+        .select(
+          `
+          quantidade,
+          valor_unitario,
+          equipamentos (
+            nome
+          )
+        `,
+        )
+        .eq("contrato_id", contractId)
+
+      if (error) throw error
+
+      const formattedEquipments = data.map((item: any) => ({
+        nome: item.equipamentos?.nome || "Equipamento",
+        quantidade: item.quantidade,
+        valor_unitario: item.valor_unitario,
+      }))
+
+      setEquipments(formattedEquipments)
+    } catch (error) {
+      console.error("[v0] Error fetching equipments:", error)
+    }
+  }
 
   const handleMarkAsPaid = async (e: React.MouseEvent) => {
     e.preventDefault()
@@ -228,6 +270,7 @@ export function MonthlyPaymentCard({
         paymentDate={dataPagamento || new Date().toISOString()}
         contractStartDate={contractStartDate}
         contractEndDate={contractEndDate}
+        equipments={equipments}
       />
     </>
   )

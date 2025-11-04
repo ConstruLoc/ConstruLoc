@@ -309,6 +309,12 @@ export default async function ContractDetailsPage({ params }: { params: Promise<
               onMarkAsPaid={handleMarkAsPaid}
               onRecalculate={handleRecalculatePayments}
               contractId={id}
+              contractNumber={contract.numero_contrato}
+              clientName={contract.clientes.nome}
+              clientCpf={contract.clientes.documento}
+              clientPhone={contract.clientes.telefone}
+              contractStartDate={contract.data_inicio}
+              contractEndDate={contract.data_fim}
             />
           )}
 

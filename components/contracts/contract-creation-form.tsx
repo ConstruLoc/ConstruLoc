@@ -22,7 +22,6 @@ import {
   Package,
   MapPin,
   Calendar,
-  DollarSign,
   Edit,
 } from "lucide-react"
 import { ContractPhotoUpload } from "./contract-photo-upload"
@@ -69,7 +68,6 @@ export function ContractCreationForm({ contract, onSuccess }: ContractCreationFo
     cliente_id: contract?.cliente_id || "",
     data_inicio: contract?.data_inicio || "",
     data_fim: contract?.data_fim || "",
-    data_vencimento_pagamento: contract?.data_vencimento_pagamento || "",
     status: contract?.status || "pendente",
     status_pagamento: contract?.status_pagamento || "pendente",
     observacoes: contract?.observacoes || "",
@@ -87,6 +85,7 @@ export function ContractCreationForm({ contract, onSuccess }: ContractCreationFo
   const [searchTerm, setSearchTerm] = useState("")
   const [isLoadingData, setIsLoadingData] = useState(true)
   const [contractPhoto, setContractPhoto] = useState<File | null>(null)
+  const [diaVencimento, setDiaVencimento] = useState<number>(contract?.dia_vencimento || 5)
 
   const router = useRouter()
   const supabase = createClient()
@@ -412,7 +411,7 @@ export function ContractCreationForm({ contract, onSuccess }: ContractCreationFo
 
       console.log("[v0] Saving contract with valor_total:", valorTotal)
 
-      const contractData = {
+      const contractData: any = {
         cliente_id: formData.cliente_id,
         data_inicio: formData.data_inicio,
         data_fim: formData.data_fim,
@@ -421,6 +420,22 @@ export function ContractCreationForm({ contract, onSuccess }: ContractCreationFo
         endereco_instalacao: formData.endereco_instalacao,
         valor_total: valorTotal,
         foto_contrato: contractPhoto,
+      }
+
+      // Tentar adicionar dia_vencimento apenas se a coluna existir
+      try {
+        // Verificar se a coluna existe fazendo uma query de teste
+        const { error: checkError } = await supabase.from("contratos").select("dia_vencimento").limit(1)
+
+        if (!checkError) {
+          // Coluna existe, adicionar ao contractData
+          contractData.dia_vencimento = diaVencimento
+          console.log("[v0] dia_vencimento column exists, using value:", diaVencimento)
+        } else {
+          console.log("[v0] dia_vencimento column does not exist yet, skipping")
+        }
+      } catch (checkError) {
+        console.log("[v0] Could not check for dia_vencimento column, skipping")
       }
 
       let contractId: string
@@ -480,7 +495,8 @@ export function ContractCreationForm({ contract, onSuccess }: ContractCreationFo
           .from("pagamentos")
           .update({
             valor: valorTotal,
-            data_vencimento: formData.data_vencimento_pagamento || formData.data_inicio,
+            status: formData.status_pagamento,
+            forma_pagamento: "A definir",
           })
           .eq("contrato_id", contractId)
       } else {
@@ -519,7 +535,6 @@ export function ContractCreationForm({ contract, onSuccess }: ContractCreationFo
         const paymentData = {
           contrato_id: contractId,
           valor: valorTotal,
-          data_vencimento: formData.data_vencimento_pagamento || formData.data_inicio,
           status: formData.status_pagamento,
           forma_pagamento: "A definir",
         }
@@ -667,23 +682,33 @@ export function ContractCreationForm({ contract, onSuccess }: ContractCreationFo
                     />
                   </div>
 
-                  {/* Data de Vencimento do Pagamento */}
+                  {/* Dia de Vencimento Mensal */}
                   <div className="space-y-2">
                     <Label
-                      htmlFor="data_vencimento_pagamento"
+                      htmlFor="diaVencimento"
                       className="text-gray-300 text-base md:text-sm flex items-center gap-2"
                     >
-                      <DollarSign className="h-4 w-4 text-orange-500" />
-                      Data de Vencimento do Pagamento
+                      <Calendar className="h-4 w-4 text-orange-500" />
+                      Dia de Vencimento Mensal
                     </Label>
-                    <Input
-                      id="data_vencimento_pagamento"
-                      type="date"
-                      value={formData.data_vencimento_pagamento}
-                      onChange={(e) => handleInputChange("data_vencimento_pagamento", e.target.value)}
-                      className="bg-gray-700 border-gray-600 text-white text-base"
-                    />
-                    <p className="text-gray-400 text-xs">Notificação será enviada 5 dias antes desta data</p>
+                    <Select
+                      value={diaVencimento.toString()}
+                      onValueChange={(value) => setDiaVencimento(Number.parseInt(value))}
+                    >
+                      <SelectTrigger className="bg-gray-700 border-gray-600 text-white text-base">
+                        <SelectValue placeholder="Selecione o dia" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-gray-700 border-gray-600">
+                        {Array.from({ length: 31 }, (_, i) => i + 1).map((dia) => (
+                          <SelectItem key={dia} value={dia.toString()} className="text-white hover:bg-gray-600">
+                            Dia {dia}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <p className="text-gray-400 text-xs">
+                      Todos os pagamentos mensais vencerão neste dia. Notificação será enviada 5 dias antes.
+                    </p>
                   </div>
 
                   {/* Status do Contrato e Status de Pagamento - lado a lado */}

@@ -5,16 +5,23 @@ import { EditMonthlyPaymentModal } from "@/components/contracts/edit-monthly-pay
 import { DeletePaymentModal } from "@/components/contracts/delete-payment-modal"
 import { deleteMonthlyPayment } from "@/lib/actions/monthly-payments"
 import { useRouter } from "next/navigation"
-import { useState } from "react"
+import { useState, useMemo } from "react"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
-import { RefreshCw } from "lucide-react"
+import { RefreshCw, Filter } from "lucide-react"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 interface MonthlyPaymentsSectionProps {
   payments: any[]
   onMarkAsPaid: (paymentId: string) => Promise<any>
   onRecalculate?: () => Promise<{ success: boolean; error?: string; newValorTotal?: number }>
   contractId?: string
+  contractNumber?: string
+  clientName?: string
+  clientCpf?: string
+  clientPhone?: string
+  contractStartDate?: string
+  contractEndDate?: string
 }
 
 export function MonthlyPaymentsSection({
@@ -22,12 +29,39 @@ export function MonthlyPaymentsSection({
   onMarkAsPaid,
   onRecalculate,
   contractId,
+  contractNumber,
+  clientName,
+  clientCpf,
+  clientPhone,
+  contractStartDate,
+  contractEndDate,
 }: MonthlyPaymentsSectionProps) {
   const router = useRouter()
   const [editingPayment, setEditingPayment] = useState<any | null>(null)
   const [deletingPayment, setDeletingPayment] = useState<any | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
   const [isRecalculating, setIsRecalculating] = useState(false)
+
+  const [statusFilter, setStatusFilter] = useState<string>("todos")
+  const [sortOrder, setSortOrder] = useState<string>("recente")
+
+  const filteredAndSortedPayments = useMemo(() => {
+    let filtered = [...payments]
+
+    // Filtrar por status
+    if (statusFilter !== "todos") {
+      filtered = filtered.filter((p) => p.status === statusFilter)
+    }
+
+    // Ordenar por data
+    filtered.sort((a, b) => {
+      const dateA = new Date(a.data_vencimento).getTime()
+      const dateB = new Date(b.data_vencimento).getTime()
+      return sortOrder === "recente" ? dateB - dateA : dateA - dateB
+    })
+
+    return filtered
+  }, [payments, statusFilter, sortOrder])
 
   const handleMarkAsPaid = async (paymentId: string) => {
     try {
@@ -137,8 +171,46 @@ export function MonthlyPaymentsSection({
           )}
         </div>
 
+        <div className="mb-6 p-4 bg-slate-900 rounded-lg border border-slate-700">
+          <div className="flex items-center gap-2 mb-3">
+            <Filter className="h-4 w-4 text-orange-400" />
+            <h3 className="text-sm font-semibold text-white">Filtros</h3>
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div>
+              <label className="text-xs text-slate-400 mb-2 block">Status do Pagamento</label>
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="bg-slate-800 border-slate-600 text-white">
+                  <SelectValue placeholder="Selecione o status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todos">Todos os Status</SelectItem>
+                  <SelectItem value="pago">Apenas Pagos</SelectItem>
+                  <SelectItem value="pendente">Apenas Pendentes</SelectItem>
+                  <SelectItem value="atrasado">Apenas Atrasados</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <label className="text-xs text-slate-400 mb-2 block">Ordenar por Data</label>
+              <Select value={sortOrder} onValueChange={setSortOrder}>
+                <SelectTrigger className="bg-slate-800 border-slate-600 text-white">
+                  <SelectValue placeholder="Selecione a ordenação" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="recente">Mais Recente Primeiro</SelectItem>
+                  <SelectItem value="antigo">Mais Antigo Primeiro</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <div className="mt-3 text-xs text-slate-400">
+            Mostrando {filteredAndSortedPayments.length} de {payments.length} pagamentos
+          </div>
+        </div>
+
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {payments.map((payment: any) => (
+          {filteredAndSortedPayments.map((payment: any) => (
             <MonthlyPaymentCard
               key={payment.id}
               id={payment.id}
@@ -150,9 +222,22 @@ export function MonthlyPaymentsSection({
               onMarkAsPaid={handleMarkAsPaid}
               onEdit={handleEdit}
               onDelete={handleDelete}
+              contractId={contractId}
+              contractNumber={contractNumber}
+              clientName={clientName}
+              clientCpf={clientCpf}
+              clientPhone={clientPhone}
+              contractStartDate={contractStartDate}
+              contractEndDate={contractEndDate}
             />
           ))}
         </div>
+
+        {filteredAndSortedPayments.length === 0 && (
+          <div className="text-center py-8 text-slate-400">
+            Nenhum pagamento encontrado com os filtros selecionados.
+          </div>
+        )}
 
         {/* Resumo dos pagamentos */}
         <div className="mt-6 p-4 bg-slate-900 rounded-lg border border-slate-700">

@@ -15,6 +15,7 @@ const menuItems = [
   { icon: "💳", label: "Pagamentos", href: "/pagamentos" },
   { icon: "📚", label: "Catálogo", href: "/catalogo" },
   { icon: "📊", label: "Relatórios", href: "/relatorios" },
+  { icon: "🧾", label: "Comprovantes", href: "/comprovantes" },
   { icon: "⚙️", label: "Configurações", href: "/configuracoes" },
 ]
 

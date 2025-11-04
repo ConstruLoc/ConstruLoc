@@ -18,6 +18,7 @@ import {
   Settings,
   ChevronLeft,
   ChevronRight,
+  Receipt,
 } from "lucide-react"
 
 const menuSections = [
@@ -43,7 +44,10 @@ const menuSections = [
   },
   {
     title: "Análises",
-    items: [{ icon: TrendingUp, label: "Relatórios", href: "/relatorios", gradient: "from-yellow-500 to-yellow-600" }],
+    items: [
+      { icon: TrendingUp, label: "Relatórios", href: "/relatorios", gradient: "from-yellow-500 to-yellow-600" },
+      { icon: Receipt, label: "Comprovantes", href: "/comprovantes", gradient: "from-cyan-500 to-cyan-600" },
+    ],
   },
   {
     title: "Sistema",
