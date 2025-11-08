@@ -7,6 +7,7 @@ import { ThemeProvider } from "@/contexts/theme-context"
 import { UserProvider } from "@/contexts/user-context"
 import { Toaster } from "@/components/ui/toaster"
 import { NotificationScheduler } from "@/components/notification-scheduler"
+import { DemoModeShortcut } from "@/components/demo-mode-shortcut"
 import "./globals.css"
 
 const inter = Inter({
@@ -56,6 +57,7 @@ export default function RootLayout({
           <ThemeProvider>
             <UserProvider>
               <NotificationScheduler />
+              <DemoModeShortcut />
               <Suspense fallback={null}>{children}</Suspense>
               <Toaster />
             </UserProvider>

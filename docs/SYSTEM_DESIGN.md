@@ -1020,7 +1020,7 @@ All API endpoints follow a consistent error response format:
 │  │   Automatic Deployments           │  │
 │  │   - Preview (Pull Requests)       │  │
 │  │   - Production (Main Branch)      │  │
-│  └───────────────────────────────────┘  │
+│  └──────────────────────────���────────┘  │
 └─────────────────────────────────────────┘
                   ↓
 ┌─────────────────────────────────────────┐

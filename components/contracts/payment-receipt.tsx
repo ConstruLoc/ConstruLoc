@@ -12,6 +12,7 @@ interface PaymentReceiptProps {
   paymentMonth: string
   paymentValue: number
   paymentDate: string
+  paymentStatus?: "pendente" | "pago" | "atrasado"
   contractStartDate: string
   contractEndDate: string
   equipments?: Array<{
@@ -31,6 +32,7 @@ export const PaymentReceipt = forwardRef<HTMLDivElement, PaymentReceiptProps>(
       paymentMonth,
       paymentValue,
       paymentDate,
+      paymentStatus = "pago",
       contractStartDate,
       contractEndDate,
       equipments = [],
@@ -66,6 +68,92 @@ export const PaymentReceipt = forwardRef<HTMLDivElement, PaymentReceiptProps>(
     const formattedStartDate = format(startDateObj, "dd/MM/yyyy")
     const formattedEndDate = format(endDateObj, "dd/MM/yyyy")
     const formattedNow = format(new Date(), "dd/MM/yyyy 'às' HH:mm")
+
+    const getStatusConfig = () => {
+      switch (paymentStatus) {
+        case "pago":
+          return {
+            title: "Comprovante de Pagamento",
+            subtitle: "✓ Pagamento recebido com sucesso",
+            icon: (
+              <svg
+                width="40"
+                height="40"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="#16a34a"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                <polyline points="22 4 12 14.01 9 11.01" />
+              </svg>
+            ),
+            backgroundColor: "#dcfce7",
+            borderColor: "#16a34a",
+            dateLabel: "Data do Pagamento",
+            statusLabel: "PAGO",
+            statusColor: "#16a34a",
+            valueColor: "#16a34a",
+          }
+        case "atrasado":
+          return {
+            title: "Comprovante de Pagamento",
+            subtitle: "⚠ Pagamento em atraso - Aguardando regularização",
+            icon: (
+              <svg
+                width="40"
+                height="40"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="#dc2626"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <circle cx="12" cy="12" r="10" />
+                <line x1="12" y1="8" x2="12" y2="12" />
+                <line x1="12" y1="16" x2="12.01" y2="16" />
+              </svg>
+            ),
+            backgroundColor: "#fee2e2",
+            borderColor: "#dc2626",
+            dateLabel: "Data de Vencimento (VENCIDO)",
+            statusLabel: "ATRASADO",
+            statusColor: "#dc2626",
+            valueColor: "#dc2626",
+          }
+        default:
+          return {
+            title: "Comprovante de Pagamento",
+            subtitle: "⏱ Pagamento pendente - Aguardando confirmação",
+            icon: (
+              <svg
+                width="40"
+                height="40"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="#eab308"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <circle cx="12" cy="12" r="10" />
+                <polyline points="12 6 12 12 16 14" />
+              </svg>
+            ),
+            backgroundColor: "#fef9c3",
+            borderColor: "#eab308",
+            dateLabel: "Data de Vencimento",
+            statusLabel: "PENDENTE",
+            statusColor: "#eab308",
+            valueColor: "#1f2937",
+          }
+      }
+    }
+
+    const statusConfig = getStatusConfig()
 
     return (
       <div
@@ -106,35 +194,47 @@ export const PaymentReceipt = forwardRef<HTMLDivElement, PaymentReceiptProps>(
               justifyContent: "center",
               width: "64px",
               height: "64px",
-              backgroundColor: "#dcfce7",
+              backgroundColor: statusConfig.backgroundColor,
               borderRadius: "50%",
               marginBottom: "16px",
+              border: `3px solid ${statusConfig.borderColor}`,
             }}
           >
-            <svg
-              width="40"
-              height="40"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="#16a34a"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-              <polyline points="22 4 12 14.01 9 11.01" />
-            </svg>
+            {statusConfig.icon}
           </div>
           <h2
             style={{ fontSize: "24px", fontWeight: "bold", color: "#1f2937", marginBottom: "8px", margin: "0 0 8px 0" }}
           >
-            Comprovante de Pagamento
+            {statusConfig.title}
           </h2>
-          <p style={{ fontSize: "14px", color: "#6b7280", margin: "0" }}>Pagamento recebido com sucesso</p>
+          <p style={{ fontSize: "14px", color: "#6b7280", margin: "0 0 12px 0" }}>{statusConfig.subtitle}</p>
+          <div
+            style={{
+              display: "inline-block",
+              padding: "8px 24px",
+              backgroundColor: statusConfig.backgroundColor,
+              border: `2px solid ${statusConfig.borderColor}`,
+              borderRadius: "9999px",
+              fontSize: "14px",
+              fontWeight: "bold",
+              color: statusConfig.statusColor,
+              letterSpacing: "0.05em",
+            }}
+          >
+            STATUS: {statusConfig.statusLabel}
+          </div>
         </div>
 
         {/* Payment Details */}
-        <div style={{ backgroundColor: "#f9fafb", borderRadius: "8px", padding: "24px", marginBottom: "24px" }}>
+        <div
+          style={{
+            backgroundColor: "#f9fafb",
+            borderRadius: "8px",
+            padding: "24px",
+            marginBottom: "24px",
+            border: `2px solid ${statusConfig.borderColor}`,
+          }}
+        >
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", marginBottom: "16px" }}>
             <div>
               <p
@@ -180,9 +280,11 @@ export const PaymentReceipt = forwardRef<HTMLDivElement, PaymentReceiptProps>(
                 margin: "0 0 4px 0",
               }}
             >
-              Valor Pago
+              {paymentStatus === "pago" ? "Valor Pago" : "Valor a Pagar"}
             </p>
-            <p style={{ fontSize: "30px", fontWeight: "bold", color: "#16a34a", margin: "0" }}>{formattedValue}</p>
+            <p style={{ fontSize: "30px", fontWeight: "bold", color: statusConfig.valueColor, margin: "0" }}>
+              {formattedValue}
+            </p>
           </div>
         </div>
 
@@ -283,11 +385,30 @@ export const PaymentReceipt = forwardRef<HTMLDivElement, PaymentReceiptProps>(
         </div>
 
         {/* Payment Date */}
-        <div style={{ textAlign: "center", paddingTop: "24px", borderTop: "1px solid #e5e7eb" }}>
-          <p style={{ fontSize: "12px", color: "#6b7280", marginBottom: "4px", margin: "0 0 4px 0" }}>
-            Data do Pagamento
+        <div
+          style={{
+            textAlign: "center",
+            paddingTop: "24px",
+            borderTop: "1px solid #e5e7eb",
+            backgroundColor: statusConfig.backgroundColor,
+            padding: "16px",
+            borderRadius: "8px",
+            border: `1px solid ${statusConfig.borderColor}`,
+          }}
+        >
+          <p
+            style={{
+              fontSize: "12px",
+              color: statusConfig.statusColor,
+              marginBottom: "4px",
+              margin: "0 0 4px 0",
+              fontWeight: "bold",
+              textTransform: "uppercase",
+            }}
+          >
+            {statusConfig.dateLabel}
           </p>
-          <p style={{ fontSize: "14px", fontWeight: "500", color: "#1f2937", margin: "0" }}>{formattedPaymentDate}</p>
+          <p style={{ fontSize: "16px", fontWeight: "bold", color: "#1f2937", margin: "0" }}>{formattedPaymentDate}</p>
         </div>
 
         {/* Footer */}

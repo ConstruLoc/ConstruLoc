@@ -23,6 +23,7 @@ import { Plus, Search, FileText, AlertTriangle, XCircle } from "lucide-react"
 import Link from "next/link"
 import { useToast } from "@/hooks/use-toast"
 import { useRouter } from "next/navigation"
+import { maskClientName, maskCompany } from "@/lib/utils/demo-mode"
 
 interface Contract {
   id: string
@@ -477,7 +478,7 @@ export function ContractList() {
                       </TableCell>
                     </TableRow>
                   ) : (
-                    filteredContracts.map((contract) => (
+                    filteredContracts.map((contract, index) => (
                       <TableRow
                         key={contract.id}
                         className="border-slate-700 hover:bg-slate-700/50 cursor-pointer"
@@ -486,9 +487,11 @@ export function ContractList() {
                         <TableCell className="font-medium text-orange-400">{contract.numero_contrato}</TableCell>
                         <TableCell>
                           <div>
-                            <div className="font-medium text-white">{contract.clientes?.nome}</div>
+                            <div className="font-medium text-white">
+                              {maskClientName(contract.clientes?.nome, index)}
+                            </div>
                             {contract.clientes?.empresa && (
-                              <div className="text-sm text-slate-400">{contract.clientes.empresa}</div>
+                              <div className="text-sm text-slate-400">{maskCompany(contract.clientes.empresa)}</div>
                             )}
                           </div>
                         </TableCell>
@@ -531,7 +534,7 @@ export function ContractList() {
               {filteredContracts.length === 0 ? (
                 <div className="text-center py-8 text-slate-400">Nenhum contrato encontrado</div>
               ) : (
-                filteredContracts.map((contract) => (
+                filteredContracts.map((contract, index) => (
                   <Card
                     key={contract.id}
                     className="bg-slate-900 border-slate-700 cursor-pointer hover:bg-slate-800/50 transition-colors"
@@ -541,9 +544,9 @@ export function ContractList() {
                       <div className="flex items-start justify-between mb-3">
                         <div className="flex-1">
                           <div className="font-medium text-orange-400 text-lg mb-1">{contract.numero_contrato}</div>
-                          <div className="font-medium text-white">{contract.clientes?.nome}</div>
+                          <div className="font-medium text-white">{maskClientName(contract.clientes?.nome, index)}</div>
                           {contract.clientes?.empresa && (
-                            <div className="text-sm text-slate-400">{contract.clientes.empresa}</div>
+                            <div className="text-sm text-slate-400">{maskCompany(contract.clientes.empresa)}</div>
                           )}
                         </div>
                         <div onClick={(e) => e.stopPropagation()}>

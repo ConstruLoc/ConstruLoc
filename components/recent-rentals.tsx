@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge"
 import { createClient } from "@/lib/supabase/client"
 import { Calendar, User, Package, Clock } from "lucide-react"
 import Link from "next/link"
+import { maskClientName } from "@/lib/utils/demo-mode"
 
 interface RecentRental {
   id: string
@@ -138,8 +139,9 @@ export function RecentRentals() {
           </div>
         ) : (
           <div className="space-y-3">
-            {rentals.map((rental) => {
+            {rentals.map((rental, index) => {
               const daysRemaining = rental.data_fim ? getDaysRemaining(rental.data_fim) : null
+              const clientName = maskClientName(rental.clientes?.nome || "Cliente não encontrado", index)
 
               return (
                 <Link
@@ -152,7 +154,7 @@ export function RecentRentals() {
                       <p className="font-semibold text-white text-sm">{rental.numero_contrato}</p>
                       <div className="flex items-center gap-2 mt-1">
                         <User className="h-3 w-3 text-slate-400" />
-                        <p className="text-xs text-slate-400">{rental.clientes?.nome || "Cliente não encontrado"}</p>
+                        <p className="text-xs text-slate-400">{clientName}</p>
                       </div>
                     </div>
                     <Badge className={`${getStatusColor(rental.status)} border text-xs`}>

@@ -16,6 +16,7 @@ interface PaymentReceiptModalProps {
   paymentMonth: string
   paymentValue: number
   paymentDate: string
+  paymentStatus?: "pendente" | "pago" | "atrasado"
   contractStartDate: string
   contractEndDate: string
   equipments?: Array<{
@@ -158,7 +159,12 @@ export function PaymentReceiptModal({ open, onOpenChange, equipments, ...receipt
         </DialogHeader>
 
         <div className="space-y-4">
-          <PaymentReceipt ref={receiptRef} {...receiptProps} equipments={equipments} />
+          <PaymentReceipt
+            ref={receiptRef}
+            {...receiptProps}
+            equipments={equipments}
+            paymentStatus={receiptProps.paymentStatus}
+          />
 
           <div className="flex gap-2 pt-4 border-t">
             <Button onClick={handlePrint} className="flex-1 bg-blue-600 hover:bg-blue-700">

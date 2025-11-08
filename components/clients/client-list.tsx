@@ -20,6 +20,7 @@ import {
 import { Plus, Search, MoreHorizontal, Edit, Eye, Trash2, Building, User, AlertTriangle } from "lucide-react"
 import Link from "next/link"
 import { useToast } from "@/hooks/use-toast"
+import { maskClientName, maskCPF, maskPhone, maskEmail, maskCompany } from "@/lib/utils/demo-mode"
 
 interface Client {
   id: string
@@ -115,6 +116,9 @@ export function ClientList() {
   const formatDocument = (document: string, type: string) => {
     if (!document) return "-"
 
+    const maskedDoc = maskCPF(document)
+    if (maskedDoc !== document) return maskedDoc
+
     if (type === "CPF") {
       return document.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4")
     } else {
@@ -124,6 +128,9 @@ export function ClientList() {
 
   const formatPhone = (phone: string) => {
     if (!phone) return "-"
+    const maskedPhone = maskPhone(phone)
+    if (maskedPhone !== phone) return maskedPhone
+
     return phone.replace(/(\d{2})(\d{4,5})(\d{4})/, "($1) $2-$3")
   }
 
@@ -257,13 +264,15 @@ export function ClientList() {
                   </td>
                 </tr>
               ) : (
-                filteredClients.map((client) => (
+                filteredClients.map((client, index) => (
                   <tr key={client.id} className="border-t border-gray-800 hover:bg-gray-800/50 transition-colors">
                     <td className="px-4 py-3 min-w-[200px]">
                       <div className="flex flex-col gap-1">
-                        <div className="font-medium text-gray-100 whitespace-nowrap">{client.nome}</div>
+                        <div className="font-medium text-gray-100 whitespace-nowrap">
+                          {maskClientName(client.nome, index)}
+                        </div>
                         {client.empresa && (
-                          <div className="text-xs text-orange-400 whitespace-nowrap">{client.empresa}</div>
+                          <div className="text-xs text-orange-400 whitespace-nowrap">{maskCompany(client.empresa)}</div>
                         )}
                       </div>
                     </td>
@@ -280,7 +289,7 @@ export function ClientList() {
                     <td className="px-4 py-3 font-mono text-sm text-gray-300">
                       {formatDocument(client.documento, client.tipo_documento)}
                     </td>
-                    <td className="px-4 py-3 text-sm text-gray-300">{client.email || "-"}</td>
+                    <td className="px-4 py-3 text-sm text-gray-300">{maskEmail(client.email) || "-"}</td>
                     <td className="px-4 py-3 text-sm text-gray-300 whitespace-nowrap">
                       {formatPhone(client.telefone)}
                     </td>
@@ -355,13 +364,13 @@ export function ClientList() {
           {filteredClients.length === 0 ? (
             <div className="text-center py-8 text-gray-500">Nenhum cliente encontrado</div>
           ) : (
-            filteredClients.map((client) => (
+            filteredClients.map((client, index) => (
               <Card key={client.id} className="bg-gray-900 border-gray-800">
                 <CardContent className="p-4">
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex-1">
-                      <div className="font-medium text-lg mb-1">{client.nome}</div>
-                      {client.empresa && <div className="text-sm text-orange-400">{client.empresa}</div>}
+                      <div className="font-medium text-lg mb-1">{maskClientName(client.nome, index)}</div>
+                      {client.empresa && <div className="text-sm text-orange-400">{maskCompany(client.empresa)}</div>}
                       <div className="flex items-center gap-1 w-fit border-orange-500/30 mt-2">
                         {client.tipo_documento === "CPF" ? (
                           <User className="h-3 w-3 text-orange-400" />
@@ -430,7 +439,7 @@ export function ClientList() {
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-400">Email:</span>
-                      <span className="truncate ml-2">{client.email}</span>
+                      <span className="truncate ml-2">{maskEmail(client.email)}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-400">Telefone:</span>

@@ -5,9 +5,12 @@ import type React from "react"
 import { useState, useEffect, useCallback, useMemo, useRef } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 import { Calendar, CheckCircle, AlertTriangle, Clock, XCircle, Wrench, TrendingDown } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 import Link from "next/link"
+import { maskClientName } from "@/lib/utils/demo-mode"
+import { useToast } from "@/hooks/use-toast"
 
 interface Alert {
   id: string
@@ -31,9 +34,11 @@ interface ExpiringContract {
 export function DashboardAlerts() {
   const [alerts, setAlerts] = useState<Alert[]>([])
   const [loading, setLoading] = useState(true)
+  const [processingReturn, setProcessingReturn] = useState<string | null>(null)
   const supabase = useMemo(() => createClient(), [])
   const hasFetchedRef = useRef(false)
   const fetchTimeoutRef = useRef<NodeJS.Timeout>()
+  const { toast } = useToast()
 
   const fetchAlerts = useCallback(async () => {
     if (hasFetchedRef.current) return
@@ -96,12 +101,12 @@ export function DashboardAlerts() {
         const expiring1to2Days: any[] = []
         const expiring3to7Days: any[] = []
 
-        expiringContractsList.forEach((contract: any) => {
+        expiringContractsList.forEach((contract: any, index: number) => {
           const daysUntilExpiry = contract.days_until_expiry
 
           const contractInfo = {
             ...contract,
-            clienteNome: contract.cliente_nome,
+            clienteNome: maskClientName(contract.cliente_nome, index),
           }
 
           if (daysUntilExpiry < 0) {
@@ -253,6 +258,46 @@ export function DashboardAlerts() {
     }
   }
 
+  const handleMarkAsReturned = async (contractId: string, e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+
+    setProcessingReturn(contractId)
+
+    try {
+      const { error } = await supabase
+        .from("contratos")
+        .update({
+          status: "finalizado",
+          data_fim: new Date().toISOString().split("T")[0],
+        })
+        .eq("id", contractId)
+
+      if (error) throw error
+
+      toast({
+        title: "Devolução confirmada",
+        description: "O contrato foi marcado como finalizado com sucesso.",
+      })
+
+      setAlerts((prev) => prev.filter((alert) => alert.contractId !== contractId))
+
+      setTimeout(() => {
+        hasFetchedRef.current = false
+        fetchAlerts()
+      }, 500)
+    } catch (error) {
+      console.error("Error marking contract as returned:", error)
+      toast({
+        title: "Erro ao confirmar devolução",
+        description: "Não foi possível marcar o contrato como devolvido. Tente novamente.",
+        variant: "destructive",
+      })
+    } finally {
+      setProcessingReturn(null)
+    }
+  }
+
   if (loading) {
     return (
       <Card className="bg-slate-800 border-slate-700">
@@ -304,6 +349,27 @@ export function DashboardAlerts() {
                       <p className="font-medium text-sm text-white">{alert.title}</p>
                       <p className="text-xs text-slate-400 mt-1">{alert.description}</p>
                     </div>
+                    {alert.contractId && (alert.type === "error" || alert.type === "warning") && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={(e) => handleMarkAsReturned(alert.contractId!, e)}
+                        disabled={processingReturn === alert.contractId}
+                        className="bg-green-600 hover:bg-green-700 text-white border-green-500 h-8 px-3"
+                      >
+                        {processingReturn === alert.contractId ? (
+                          <span className="flex items-center gap-2">
+                            <span className="h-3 w-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                            Processando...
+                          </span>
+                        ) : (
+                          <span className="flex items-center gap-2">
+                            <CheckCircle className="h-4 w-4" />
+                            Marcar como Devolvido
+                          </span>
+                        )}
+                      </Button>
+                    )}
                     {alert.count !== undefined && alert.count > 0 && (
                       <Badge
                         variant={alert.type === "error" ? "destructive" : "secondary"}

@@ -10,6 +10,7 @@ import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { PaymentReceiptModal } from "./payment-receipt-modal"
 import { createClient } from "@/lib/supabase/client"
+import { maskClientName, maskCPF, maskPhone } from "@/lib/utils/demo-mode"
 
 interface MonthlyPaymentCardProps {
   id: string
@@ -217,16 +218,14 @@ export function MonthlyPaymentCard({
                 </Button>
               )}
 
-              {status === "pago" && (
-                <Button
-                  size="sm"
-                  onClick={() => setShowReceipt(true)}
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white"
-                >
-                  <FileText className="w-4 h-4 mr-2" />
-                  Gerar Comprovante
-                </Button>
-              )}
+              <Button
+                size="sm"
+                onClick={() => setShowReceipt(true)}
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+              >
+                <FileText className="w-4 h-4 mr-2" />
+                Gerar Comprovante
+              </Button>
 
               <div className="flex gap-2">
                 {onEdit && (
@@ -262,12 +261,13 @@ export function MonthlyPaymentCard({
         open={showReceipt}
         onOpenChange={setShowReceipt}
         contractNumber={contractNumber}
-        clientName={clientName}
-        clientCpf={clientCpf}
-        clientPhone={clientPhone}
+        clientName={maskClientName(clientName)} // Aplicado mascaramento de nome
+        clientCpf={clientCpf ? maskCPF(clientCpf) : undefined} // Aplicado mascaramento de CPF
+        clientPhone={clientPhone ? maskPhone(clientPhone) : undefined} // Aplicado mascaramento de telefone
         paymentMonth={mesReferencia}
         paymentValue={valor}
         paymentDate={dataPagamento || new Date().toISOString()}
+        paymentStatus={status}
         contractStartDate={contractStartDate}
         contractEndDate={contractEndDate}
         equipments={equipments}
